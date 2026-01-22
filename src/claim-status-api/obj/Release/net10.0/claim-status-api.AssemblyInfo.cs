@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ClaimStatusApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4c75e17358b6b57bf3028803fcbe43bbc44037e5")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7a3b8d5d7f7699966f5cc903397ec0eeb3029db2")]
 [assembly: System.Reflection.AssemblyProductAttribute("ClaimStatusApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ClaimStatusApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
