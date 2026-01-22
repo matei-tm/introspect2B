@@ -29,20 +29,7 @@ builder.Services.AddControllers();
 
 // Add API documentation
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
-    {
-        Title = "Claim Status API",
-        Version = "v1",
-        Description = "GenAI-enabled Claim Status API with Amazon Bedrock integration",
-        Contact = new Microsoft.OpenApi.Models.OpenApiContact
-        {
-            Name = "Insurance Team",
-            Url = new Uri("https://example.com")
-        }
-    });
-});
+builder.Services.AddSwaggerGen();
 
 // Add health checks
 builder.Services.AddHealthChecks();

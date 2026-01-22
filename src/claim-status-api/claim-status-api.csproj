@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>ClaimStatusApi</RootNamespace>
@@ -9,14 +9,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.6" />
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.300.0" />
-    <PackageReference Include="AWSSDK.S3" Version="3.7.300.0" />
-    <PackageReference Include="AWSSDK.BedrockRuntime" Version="3.7.300.0" />
-    <PackageReference Include="Microsoft.Extensions.AWS.Logging" Version="1.0.0" />
-    <PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.0.0" />
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.400.0" />
+    <PackageReference Include="AWSSDK.S3" Version="3.7.400.0" />
+    <PackageReference Include="AWSSDK.BedrockRuntime" Version="3.7.400.0" />
+    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.300.0" />
+    <PackageReference Include="AWS.Logger.AspNetCore" Version="2.0.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
   </ItemGroup>
 
 </Project>

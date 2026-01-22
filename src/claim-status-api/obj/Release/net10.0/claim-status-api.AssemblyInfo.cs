@@ -11,9 +11,9 @@ using System;
 using System.Reflection;
 
 [assembly: System.Reflection.AssemblyCompanyAttribute("ClaimStatusApi")]
-[assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
+[assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d60739d94b93ac895ee75e8fe948493772f69069")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4c75e17358b6b57bf3028803fcbe43bbc44037e5")]
 [assembly: System.Reflection.AssemblyProductAttribute("ClaimStatusApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ClaimStatusApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

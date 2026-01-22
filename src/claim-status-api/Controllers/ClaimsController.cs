@@ -1,3 +1,4 @@
+using System.Net;
 using ClaimStatusApi.Models;
 using ClaimStatusApi.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -34,9 +35,6 @@ public class ClaimsController : ControllerBase
     /// <param name="id">The claim ID</param>
     /// <returns>Claim status information</returns>
     [HttpGet("{id}")]
-    [ProduceResponseType(typeof(ClaimStatus), StatusCodes.Status200OK)]
-    [ProduceResponseType(StatusCodes.Status404NotFound)]
-    [ProduceResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ClaimStatus>> GetClaim(string id)
     {
         try
@@ -67,9 +65,6 @@ public class ClaimsController : ControllerBase
     /// <param name="request">Optional request with custom notes</param>
     /// <returns>Claim summaries from Bedrock</returns>
     [HttpPost("{id}/summarize")]
-    [ProduceResponseType(typeof(ClaimSummary), StatusCodes.Status200OK)]
-    [ProduceResponseType(StatusCodes.Status404NotFound)]
-    [ProduceResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ClaimSummary>> SummarizeClaim(string id, [FromBody] SummarizeRequest? request = null)
     {
         try
