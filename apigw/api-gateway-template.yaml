@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'API Gateway for Claim Status API - RESTful endpoints for claim retrieval and summarization'
+
+Parameters:
+  ServiceEndpoint:
+    Type: String
+    Description: Kubernetes LoadBalancer or NLB endpoint for claim-status-api
+    Default: claim-status-api.example.com
+  EnvironmentName:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+
+Resources:
+  ClaimStatusApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub 'claim-status-api-${EnvironmentName}'
+      Description: 'GenAI-enabled Claim Status API with Bedrock summarization'
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  ClaimsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ClaimStatusApi
+      ParentId: !GetAtt ClaimStatusApi.RootResourceId
+      PathPart: api
+
+  ClaimsApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ClaimStatusApi
+      ParentId: !Ref ClaimsResource
+      PathPart: claims
+
+  ClaimIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ClaimStatusApi
+      ParentId: !Ref ClaimsApiResource
+      PathPart: '{id}'
+
+  SummarizeResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ClaimStatusApi
+      ParentId: !Ref ClaimIdResource
+      PathPart: summarize
+
+  GetClaimMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ClaimStatusApi
+      ResourceId: !Ref ClaimIdResource
+      HttpMethod: GET
+      AuthorizationType: AWS_IAM
+      RequestParameters:
+        method.request.path.id: true
+      Integration:
+        Type: HTTP
+        IntegrationHttpMethod: GET
+        Uri: !Sub 'http://${ServiceEndpoint}/api/claims/{id}'
+        RequestTemplates:
+          application/json: '{"id": "$input.params(''id'')"}'
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+        - StatusCode: 404
+
+  SummarizeClaimMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ClaimStatusApi
+      ResourceId: !Ref SummarizeResource
+      HttpMethod: POST
+      AuthorizationType: AWS_IAM
+      RequestParameters:
+        method.request.path.id: true
+      RequestModels:
+        application/json: !Ref SummarizeRequestModel
+      Integration:
+        Type: HTTP
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'http://${ServiceEndpoint}/api/claims/{id}/summarize'
+        RequestTemplates:
+          application/json: |
+            {
+              "id": "$input.params('id')",
+              "notesOverride": "$input.path('$.notesOverride')"
+            }
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+        - StatusCode: 404
+        - StatusCode: 500
+
+  SummarizeRequestModel:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      RestApiId: !Ref ClaimStatusApi
+      Name: SummarizeRequest
+      ContentType: application/json
+      Schema:
+        type: object
+        properties:
+          notesOverride:
+            type: string
+            description: Optional override for claim notes
+
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - GetClaimMethod
+      - SummarizeClaimMethod
+    Properties:
+      RestApiId: !Ref ClaimStatusApi
+      StageName: !Ref EnvironmentName
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${ClaimStatusApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}'
+    Export:
+      Name: !Sub 'ClaimStatusApiEndpoint-${EnvironmentName}'
+
+  ApiId:
+    Description: API Gateway ID
+    Value: !Ref ClaimStatusApi
+    Export:
+      Name: !Sub 'ClaimStatusApiId-${EnvironmentName}'

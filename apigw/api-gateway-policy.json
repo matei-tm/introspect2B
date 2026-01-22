@@ -1,0 +1,31 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowGetClaim",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "execute-api:Invoke",
+      "Resource": "arn:aws:execute-api:*:*:*/*/GET/api/claims/*"
+    },
+    {
+      "Sid": "AllowPostSummarize",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "execute-api:Invoke",
+      "Resource": "arn:aws:execute-api:*:*:*/*/POST/api/claims/*/summarize"
+    },
+    {
+      "Sid": "DenyUnauthorizedMethods",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "execute-api:Invoke",
+      "Resource": "arn:aws:execute-api:*:*:*/*/*",
+      "Condition": {
+        "StringNotEquals": {
+          "api:request/httpMethod": ["GET", "POST"]
+        }
+      }
+    }
+  ]
+}

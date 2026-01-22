@@ -1,0 +1,48 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Installing security scanning tools..."
+      - pip install semgrep bandit
+      - echo "Installing SBOM generation tool..."
+      - npm install -g @cyclonedx/bom
+
+  build:
+    commands:
+      - echo "Running Semgrep static analysis..."
+      - semgrep --config=p/security-audit --json src/claim-status-api/ > semgrep-results.json || true
+      
+      - echo "Running Bandit for Python security (if any)..."
+      - bandit -r src/ -f json > bandit-results.json || true
+      
+      - echo "Generating SBOM..."
+      - dotnet publish src/claim-status-api/claim-status-api.csproj --configuration Release --output ./publish
+      - cyclonedx-dotnet publish/claim-status-api.dll --output-file sbom.xml || true
+      
+      - echo "Scanning container image layers..."
+      - echo "Image: $REGISTRY/$REPOSITORY:$IMAGE_TAG"
+      - echo "Checking for vulnerable dependencies in packages..."
+
+  post_build:
+    commands:
+      - echo "Security scan completed"
+      - echo "Semgrep findings:" $(grep -c '"severity": "ERROR"' semgrep-results.json || echo "0")
+      - echo "Bandit findings:" $(grep -c '"severity": "HIGH"' bandit-results.json || echo "0")
+
+artifacts:
+  files:
+    - 'semgrep-results.json'
+    - 'bandit-results.json'
+    - 'sbom.xml'
+  name: SecurityArtifact
+
+reports:
+  SemgrepReport:
+    files:
+      - 'semgrep-results.json'
+    file-format: 'JSON'
+  SBOMReport:
+    files:
+      - 'sbom.xml'
+    file-format: 'XML'

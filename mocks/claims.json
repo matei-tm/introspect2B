@@ -1,0 +1,74 @@
+[
+  {
+    "id": "CLM-2024-001",
+    "status": "pending",
+    "claimType": "medical",
+    "amount": 15000.00,
+    "claimantName": "John Smith",
+    "submissionDate": "2024-01-15T08:30:00Z",
+    "notesKey": "claim-notes-001.txt"
+  },
+  {
+    "id": "CLM-2024-002",
+    "status": "approved",
+    "claimType": "property",
+    "amount": 45000.00,
+    "claimantName": "Sarah Johnson",
+    "submissionDate": "2024-01-10T14:20:00Z",
+    "notesKey": "claim-notes-002.txt"
+  },
+  {
+    "id": "CLM-2024-003",
+    "status": "under_review",
+    "claimType": "auto",
+    "amount": 8500.50,
+    "claimantName": "Michael Chen",
+    "submissionDate": "2024-01-18T10:15:00Z",
+    "notesKey": "claim-notes-003.txt"
+  },
+  {
+    "id": "CLM-2024-004",
+    "status": "denied",
+    "claimType": "life",
+    "amount": 250000.00,
+    "claimantName": "Emily Rodriguez",
+    "submissionDate": "2024-01-05T09:45:00Z",
+    "notesKey": "claim-notes-004.txt"
+  },
+  {
+    "id": "CLM-2024-005",
+    "status": "pending",
+    "claimType": "disability",
+    "amount": 3500.00,
+    "claimantName": "David Williams",
+    "submissionDate": "2024-01-20T11:30:00Z",
+    "notesKey": null
+  },
+  {
+    "id": "CLM-2024-006",
+    "status": "approved",
+    "claimType": "homeowners",
+    "amount": 22000.00,
+    "claimantName": "Patricia Lee",
+    "submissionDate": "2024-01-08T13:00:00Z",
+    "notesKey": "claim-notes-006.txt"
+  },
+  {
+    "id": "CLM-2024-007",
+    "status": "under_review",
+    "claimType": "medical",
+    "amount": 5200.75,
+    "claimantName": "Robert Martinez",
+    "submissionDate": "2024-01-17T16:45:00Z",
+    "notesKey": null
+  },
+  {
+    "id": "CLM-2024-008",
+    "status": "appealed",
+    "claimType": "property",
+    "amount": 18750.00,
+    "claimantName": "Jennifer Thompson",
+    "submissionDate": "2024-01-12T07:30:00Z",
+    "notesKey": "claim-notes-008.txt"
+  }
+]

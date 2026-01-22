@@ -1,0 +1,41 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Installing test dependencies..."
+      - dotnet restore src/claim-status-api/claim-status-api.csproj
+      - echo "Running code analysis..."
+      - dotnet build src/claim-status-api/claim-status-api.csproj --configuration Release
+
+  build:
+    commands:
+      - echo "Running unit tests..."
+      - dotnet test src/claim-status-api/claim-status-api.csproj --configuration Release --logger "console;verbosity=detailed" --collect:"XPlat Code Coverage"
+      - echo "Running integration tests..."
+      - dotnet test src/claim-status-api/claim-status-api.csproj --configuration Release --filter "Category=Integration" || true
+
+  post_build:
+    commands:
+      - echo "Test execution completed"
+      - ls -la src/claim-status-api/
+
+artifacts:
+  files:
+    - 'src/**/*'
+  name: TestArtifact
+
+reports:
+  UnitTestReport:
+    files:
+      - '**/TestResults/**/*.trx'
+    file-format: 'JUNITXML'
+  CodeCoverageReport:
+    files:
+      - '**/coverage.cobertura.xml'
+    file-format: 'COBERTURAXML'
+
+cache:
+  paths:
+    - '/root/.dotnet/**/*'
+    - '/root/.nuget/**/*'

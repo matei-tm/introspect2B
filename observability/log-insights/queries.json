@@ -1,0 +1,44 @@
+{
+  "queries": [
+    {
+      "name": "API Latency by Endpoint",
+      "description": "Analyze response times for GET /claims/{id} and POST /claims/{id}/summarize endpoints",
+      "query": "fields @timestamp, @duration, @message, httpMethod, requestPath\n| filter httpMethod in ['GET', 'POST']\n| filter requestPath like /\\/api\\/claims/\n| stats avg(@duration) as avg_latency, max(@duration) as max_latency, pct(@duration, 95) as p95_latency by httpMethod, requestPath"
+    },
+    {
+      "name": "API Error Rate",
+      "description": "Track HTTP error responses (4xx, 5xx) by endpoint",
+      "query": "fields @timestamp, @message, statusCode, requestPath\n| filter statusCode >= 400\n| stats count() as error_count, count() / (count() + count(statusCode < 400)) as error_rate by statusCode, requestPath\n| sort error_count desc"
+    },
+    {
+      "name": "DynamoDB Operation Performance",
+      "description": "Monitor DynamoDB GetItem and Query latencies",
+      "query": "fields @timestamp, @duration, @message\n| filter @message like /DynamoDB/\n| filter @message like /GetItem|Query|PutItem/\n| stats avg(@duration) as avg_latency, max(@duration) as max_latency, pct(@duration, 95) as p95_latency by operation"
+    },
+    {
+      "name": "Bedrock API Calls",
+      "description": "Track Bedrock summarization requests and response times",
+      "query": "fields @timestamp, @duration, @message\n| filter @message like /Bedrock|GenerateSummary/\n| stats count() as request_count, avg(@duration) as avg_duration, max(@duration) as max_duration by @logStream\n| sort request_count desc"
+    },
+    {
+      "name": "S3 Operations",
+      "description": "Monitor S3 GetObject and PutObject latencies",
+      "query": "fields @timestamp, @duration, @message\n| filter @message like /S3|ClaimNotes/\n| filter @message like /GetObject|PutObject/\n| stats count() as op_count, avg(@duration) as avg_latency, max(@duration) as max_latency, pct(@duration, 95) as p95_latency"
+    },
+    {
+      "name": "Pod Restart Analysis",
+      "description": "Identify pod restarts and failures in claim-status-api deployment",
+      "query": "fields @timestamp, @message, kubernetes.pod_name, kubernetes.container_name\n| filter kubernetes.labels.app = 'claim-status-api'\n| filter @message like /restart|crash|exit|error/i\n| stats count() as restart_count, max(@timestamp) as latest_restart by kubernetes.pod_name"
+    },
+    {
+      "name": "IAM IRSA Access Errors",
+      "description": "Monitor AWS SDK credential and authorization errors",
+      "query": "fields @timestamp, @message\n| filter @message like /UnauthorizedOperation|AccessDenied|NotAuthorizedForSourceException|InvalidSignatureException/\n| stats count() as error_count by @logStream, @message\n| sort error_count desc"
+    },
+    {
+      "name": "API Request Volume Trend",
+      "description": "Track API request volume over time by method",
+      "query": "fields @timestamp, httpMethod\n| filter httpMethod in ['GET', 'POST']\n| stats count() as request_count by httpMethod, bin(5m)"
+    }
+  ]
+}
