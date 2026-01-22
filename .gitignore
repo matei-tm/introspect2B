@@ -5,6 +5,21 @@ test-results/
 .cursor/
 .DS_Store
 
+# .NET
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.nuget
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+appsettings.Development.json
+
 # Terraform
 **/.terraform/*
 **/.terraform.lock.hcl
