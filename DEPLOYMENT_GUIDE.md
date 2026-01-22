@@ -14,30 +14,20 @@ This guide walks through deploying the Claim Status API microservice to AWS EKS 
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   Kubernetes (EKS)                          │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │   Claim Status API (2 replicas)                     │  │
-│  │   - GET /api/claims/{id}                           │  │
-│  │   - POST /api/claims/{id}/summarize                │  │
-│  └──────────────────┬──────────────────────────────────┘  │
-│                     │                                       │
-│  ┌──────────────────┴──────────────────┐                  │
-│  │   Service Account (IRSA)            │                  │
-│  │   - DynamoDB access                 │                  │
-│  │   - S3 access                       │                  │
-│  │   - Bedrock InvokeModel             │                  │
-│  └──────────────────┬──────────────────┘                  │
-└─────────────────────┼──────────────────────────────────────┘
-                      │
-     ┌────────────────┼────────────────┐
-     │                │                │
-┌────▼────┐   ┌──────▼─────┐  ┌──────▼──────┐
-│ DynamoDB│   │ S3 Bucket  │  │   Bedrock   │
-│ Tables  │   │ (Claims)   │  │ (Claude 3)  │
-└─────────┘   └────────────┘  └─────────────┘
+```mermaid
+flowchart TD
+  subgraph EKS[EKS Cluster]
+    API["Claim Status API<br/>- GET /api/claims/{id}<br/>- POST /api/claims/{id}/summarize"]
+    IRSA["Service Account (IRSA)
+    - DynamoDB access
+    - S3 accesss
+    - Bedrock InvokeModel"]
+  end
+
+  API --> IRSA
+  IRSA --> DDB[(DynamoDB Tables)]
+  IRSA --> S3[(S3 Bucket - Claim Notes)]
+  IRSA --> Bedrock[(Amazon Bedrock - Claude 3)]
 ```
 
 ## Deployment Steps
@@ -45,7 +35,7 @@ This guide walks through deploying the Claim Status API microservice to AWS EKS 
 ### Step 1: Prepare Infrastructure with Terraform
 
 ```bash
-cd src/eks-dapr-microservices/terraform
+cd iac/terraform
 
 # Initialize Terraform
 terraform init
@@ -68,7 +58,7 @@ terraform apply
 ### Step 2: Build and Push Container Image
 
 ```bash
-cd src/eks-dapr-microservices/claim-status-api
+cd src/claim-status-api
 
 # Set AWS variables
 export AWS_REGION=us-east-1
@@ -92,12 +82,9 @@ docker push ${ECR_REPO}/claim-status-api:latest
 ### Step 3: Deploy to EKS
 
 ```bash
-cd src/eks-dapr-microservices
+cd src/claim-status-api
 
-# Run automated deployment script
-./scripts/deploy-claim-status-api.sh
-
-# Or manually apply Kubernetes manifests
+# Apply Kubernetes manifests
 kubectl apply -f k8s/claim-status-api-deployment.yaml
 kubectl apply -f k8s/claim-status-api-service.yaml
 
@@ -271,7 +258,7 @@ kubectl delete deployment -n dapr-demo claim-status-api
 kubectl delete svc -n dapr-demo claim-status-api
 
 # Destroy Terraform resources
-cd src/eks-dapr-microservices/terraform
+cd iac/terraform
 terraform destroy
 ```
 
