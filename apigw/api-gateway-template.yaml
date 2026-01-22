@@ -1,5 +1,7 @@
+# yaml-language-server: $schema=https://json.schemastore.org/cloudformation.json
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'API Gateway for Claim Status API - RESTful endpoints for claim retrieval and summarization'
+Description: |
+  API Gateway for Claim Status API - RESTful endpoints for claim retrieval and summarization
 
 Parameters:
   ServiceEndpoint:
@@ -9,14 +11,17 @@ Parameters:
   EnvironmentName:
     Type: String
     Default: dev
-    AllowedValues: [dev, staging, prod]
+    AllowedValues:
+      - dev
+      - staging
+      - prod
 
 Resources:
   ClaimStatusApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
-      Name: !Sub 'claim-status-api-${EnvironmentName}'
-      Description: 'GenAI-enabled Claim Status API with Bedrock summarization'
+      Name: !Sub claim-status-api-${EnvironmentName}
+      Description: GenAI-enabled Claim Status API with Bedrock summarization
       EndpointConfiguration:
         Types:
           - REGIONAL
@@ -61,7 +66,7 @@ Resources:
       Integration:
         Type: HTTP
         IntegrationHttpMethod: GET
-        Uri: !Sub 'http://${ServiceEndpoint}/api/claims/{id}'
+        Uri: !Sub http://${ServiceEndpoint}/api/claims/{id}
         RequestTemplates:
           application/json: '{"id": "$input.params(''id'')"}'
         IntegrationResponses:
@@ -84,7 +89,7 @@ Resources:
       Integration:
         Type: HTTP
         IntegrationHttpMethod: POST
-        Uri: !Sub 'http://${ServiceEndpoint}/api/claims/{id}/summarize'
+        Uri: !Sub http://${ServiceEndpoint}/api/claims/{id}/summarize
         RequestTemplates:
           application/json: |
             {
@@ -123,12 +128,13 @@ Resources:
 Outputs:
   ApiEndpoint:
     Description: API Gateway endpoint URL
-    Value: !Sub 'https://${ClaimStatusApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}'
+    Value: !Sub |
+      https://${ClaimStatusApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}
     Export:
-      Name: !Sub 'ClaimStatusApiEndpoint-${EnvironmentName}'
+      Name: !Sub ClaimStatusApiEndpoint-${EnvironmentName}
 
   ApiId:
     Description: API Gateway ID
     Value: !Ref ClaimStatusApi
     Export:
-      Name: !Sub 'ClaimStatusApiId-${EnvironmentName}'
+      Name: !Sub ClaimStatusApiId-${EnvironmentName}
