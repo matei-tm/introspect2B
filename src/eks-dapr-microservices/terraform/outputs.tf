@@ -51,6 +51,11 @@ output "app_service_account_role_arn" {
   value       = aws_iam_role.app_service_account.arn
 }
 
+output "claim_notes_bucket_name" {
+  description = "Name of the S3 bucket for claim notes"
+  value       = aws_s3_bucket.claim_notes.id
+}
+
 output "eks_full_admin_access_policy_arn" {
   description = "ARN of the EKS full admin access policy"
   value       = aws_iam_policy.eks_full_admin_access.arn

@@ -122,6 +122,28 @@ data "aws_iam_policy_document" "app_service_account" {
     ]
     resources = ["*"]
   }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject",
+      "s3:ListBucket"
+    ]
+    resources = [
+      aws_s3_bucket.claim_notes.arn,
+      "${aws_s3_bucket.claim_notes.arn}/*"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "bedrock:InvokeModel"
+    ]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_policy" "app_service_account" {

@@ -73,7 +73,7 @@ variable "namespace" {
 variable "ecr_repository_names" {
   description = "List of ECR repository names"
   type        = list(string)
-  default     = []
+  default     = ["claim-status-api"]
 }
 
 variable "dynamodb_table_name" {
