@@ -15,12 +15,12 @@ resource "kubernetes_namespace" "dapr_demo" {
 }
 
 # Kubernetes Service Account with IRSA
-resource "kubernetes_service_account" "dapr" {
+resource "kubernetes_service_account" "app" {
   metadata {
-    name      = "dapr-service-account"
+    name      = "app-service-account"
     namespace = kubernetes_namespace.dapr_demo.metadata[0].name
     annotations = {
-      "eks.amazonaws.com/role-arn" = aws_iam_role.dapr_service_account.arn
+      "eks.amazonaws.com/role-arn" = aws_iam_role.app_service_account.arn
     }
   }
 

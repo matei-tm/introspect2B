@@ -104,40 +104,8 @@ resource "aws_iam_policy" "ec2_instance_type_access" {
   }
 }
 
-# IAM Policy for Dapr Service Account
-data "aws_iam_policy_document" "dapr_service_account" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "sns:Publish",
-      "sns:Subscribe",
-      "sns:CreateTopic",
-      "sns:DeleteTopic",
-      "sns:ListTopics",
-      "sns:GetTopicAttributes",
-      "sns:TagResource",
-      "sns:UntagResource",
-      "sns:ListSubscriptionsByTopic"
-    ]
-    resources = ["*"]
-  }
-
-  statement {
-    effect = "Allow"
-    actions = [
-      "sqs:SendMessage",
-      "sqs:ReceiveMessage",
-      "sqs:DeleteMessage",
-      "sqs:GetQueueAttributes",
-      "sqs:GetQueueUrl",
-      "sqs:CreateQueue",
-      "sqs:DeleteQueue",
-      "sqs:ListQueues",
-      "sqs:SetQueueAttributes"
-    ]
-    resources = ["*"]
-  }
-
+# IAM Policy for Application Service Account
+data "aws_iam_policy_document" "app_service_account" {
   statement {
     effect = "Allow"
     actions = [
@@ -156,15 +124,15 @@ data "aws_iam_policy_document" "dapr_service_account" {
   }
 }
 
-resource "aws_iam_policy" "dapr_service_account" {
-  name        = "DaprServiceAccountPolicy"
-  description = "Policy for Dapr to access SNS, SQS, and DynamoDB"
-  policy      = data.aws_iam_policy_document.dapr_service_account.json
+resource "aws_iam_policy" "app_service_account" {
+  name        = "AppServiceAccountPolicy"
+  description = "Policy for applications to access DynamoDB"
+  policy      = data.aws_iam_policy_document.app_service_account.json
 }
 
-# IAM Role for Dapr Service Account (IRSA)
-resource "aws_iam_role" "dapr_service_account" {
-  name = "DaprServiceAccountRole"
+# IAM Role for Application Service Account (IRSA)
+resource "aws_iam_role" "app_service_account" {
+  name = "AppServiceAccountRole"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -177,7 +145,7 @@ resource "aws_iam_role" "dapr_service_account" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "${replace(module.eks.cluster_oidc_issuer_url, "https://", "")}:sub" = "system:serviceaccount:${var.namespace}:dapr-service-account"
+            "${replace(module.eks.cluster_oidc_issuer_url, "https://", "")}:sub" = "system:serviceaccount:${var.namespace}:app-service-account"
             "${replace(module.eks.cluster_oidc_issuer_url, "https://", "")}:aud" = "sts.amazonaws.com"
           }
         }
@@ -186,13 +154,13 @@ resource "aws_iam_role" "dapr_service_account" {
   })
 
   tags = {
-    Name = "DaprServiceAccountRole"
+    Name = "AppServiceAccountRole"
   }
 }
 
-resource "aws_iam_role_policy_attachment" "dapr_service_account" {
-  policy_arn = aws_iam_policy.dapr_service_account.arn
-  role       = aws_iam_role.dapr_service_account.name
+resource "aws_iam_role_policy_attachment" "app_service_account" {
+  policy_arn = aws_iam_policy.app_service_account.arn
+  role       = aws_iam_role.app_service_account.name
 }
 
 # Get current IAM user name from ARN

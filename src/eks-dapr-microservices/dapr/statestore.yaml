@@ -18,6 +18,3 @@ spec:
     value: ""
   - name: sessionToken
     value: ""
-scopes:
-  - product
-  - order

@@ -39,24 +39,16 @@ output "ecr_repositories" {
   value       = { for k, v in aws_ecr_repository.services : k => v.repository_url }
 }
 
-output "sns_topic_arn" {
-  description = "ARN of the SNS topic"
-  value       = aws_sns_topic.orders.arn
-}
 
-output "sqs_queue_url" {
-  description = "URL of the SQS queue for order service"
-  value       = aws_sqs_queue.orders_subscriber.url
-}
 
 output "dynamodb_table_name" {
   description = "Name of the DynamoDB table"
   value       = aws_dynamodb_table.dapr_state.name
 }
 
-output "dapr_service_account_role_arn" {
-  description = "ARN of the IAM role for Dapr service account"
-  value       = aws_iam_role.dapr_service_account.arn
+output "app_service_account_role_arn" {
+  description = "ARN of the IAM role for application service account"
+  value       = aws_iam_role.app_service_account.arn
 }
 
 output "eks_full_admin_access_policy_arn" {

@@ -64,12 +64,6 @@ variable "node_max_size" {
   default     = 3
 }
 
-variable "dapr_version" {
-  description = "Dapr Helm chart version"
-  type        = string
-  default     = "1.12"
-}
-
 variable "namespace" {
   description = "Kubernetes namespace for applications"
   type        = string
@@ -79,13 +73,7 @@ variable "namespace" {
 variable "ecr_repository_names" {
   description = "List of ECR repository names"
   type        = list(string)
-  default     = ["product-service", "order-service"]
-}
-
-variable "sns_topic_name" {
-  description = "SNS topic name for pub/sub"
-  type        = string
-  default     = "orders"
+  default     = []
 }
 
 variable "dynamodb_table_name" {
