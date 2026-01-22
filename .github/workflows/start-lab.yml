@@ -1,0 +1,41 @@
+﻿name: 1. Start Lab
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: src/labinit
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Initialize the lab environment
+        working-directory: src/labinit
+        env:
+          SITE_USER: ${{ secrets.SITE_USER }}
+          SITE_PASSWORD: ${{ secrets.SITE_PASSWORD }}
+        run: npm test
+
+      - name: Add all screenshots to summary
+        if: always()
+        run: |
+          echo "## Screenshots" >> "$GITHUB_STEP_SUMMARY"
+          shopt -s nullglob
+          for f in src/labinit/test-results/**/*.png; do
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "### $(basename "$f")" >> "$GITHUB_STEP_SUMMARY"
+            echo "![screenshot]($f)" >> "$GITHUB_STEP_SUMMARY"
+          done

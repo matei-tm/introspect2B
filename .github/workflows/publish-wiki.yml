@@ -1,0 +1,234 @@
+name: 5. Publish Wiki
+
+on:
+  workflow_dispatch:
+    # Allow manual triggering
+
+
+jobs:
+  publish-wiki:
+    name: Clone and Publish Wiki
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # Required for creating releases and pushing tags
+      id-token: write      # Required for OIDC authentication
+      packages: write      # Required for GitHub Packages (if needed)
+    
+    steps:
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+        with:
+          path: main-repo
+
+      - name: Clone wiki repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "📚 Cloning wiki repository..."
+          git clone https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.wiki.git wiki-repo || {
+            echo "⚠️ Wiki repository not found or not initialized"
+            echo "To initialize the wiki, visit: https://github.com/${{ github.repository }}/wiki"
+            exit 1
+          }
+
+      - name: List wiki pages
+        run: |
+          echo "📋 Wiki pages found:"
+          cd wiki-repo
+          find . -name "*.md" -type f | sort
+          echo ""
+          echo "📊 Total pages: $(find . -name "*.md" -type f | wc -l)"
+
+      - name: Install dependencies
+        run: |
+          echo "📦 Installing Pandoc and LaTeX..."
+          sudo apt-get update
+          sudo apt-get install -y pandoc texlive-xetex texlive-fonts-recommended texlive-plain-generic texlive-latex-extra librsvg2-bin
+          
+          echo "✅ Verifying installations..."
+          which pandoc
+          which xelatex
+          which rsvg-convert
+          rsvg-convert --version
+
+      - name: Convert wiki to PDF
+        run: |
+          cd wiki-repo
+          echo "🔄 Converting wiki pages to PDF..."
+          
+          # Create a timestamp
+          TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
+          
+          # Create output directory
+          mkdir -p pdf-output
+          mkdir -p images
+          
+          echo "🖼️ Converting SVG images to PNG for better text rendering..."
+          # Find all SVG files and convert them to PNG
+          find . -name "*.svg" -type f | while read svgfile; do
+            pngfile="${svgfile%.svg}.png"
+            echo "Converting: $svgfile -> $pngfile"
+            rsvg-convert -f png -d 300 -p 300 "$svgfile" -o "$pngfile" || echo "Failed to convert $svgfile"
+          done
+          
+          echo "🔄 Replacing SVG references with PNG in markdown..."
+          # Replace .svg with .png in all markdown files
+          find . -name "*.md" -type f -exec sed -i 's/\.svg/.png/g' {} \;
+          
+          # Create a combined PDF with all pages
+          echo "📚 Creating combined PDF..."
+          
+          # Combine all markdown files into one
+          echo "# Wiki Documentation" > combined.md
+          echo "" >> combined.md
+          echo "**Generated:** $(date +'%Y-%m-%d %H:%M:%S UTC')" >> combined.md
+          echo "" >> combined.md
+          echo "**Repository:** ${{ github.repository }}" >> combined.md
+          echo "" >> combined.md
+          echo "---" >> combined.md
+          echo "" >> combined.md
+          
+          # Append all markdown files
+          find . -name "*.md" -type f ! -name "combined.md" | sort | while read file; do
+            filename=$(basename "$file" .md)
+            echo "" >> combined.md
+            echo "\\newpage" >> combined.md
+            echo "" >> combined.md
+            echo "# ${filename}" >> combined.md
+            echo "" >> combined.md
+            cat "$file" >> combined.md
+            echo "" >> combined.md
+          done
+          
+          # Convert combined markdown to PDF
+          pandoc combined.md \
+            -o "pdf-output/wiki-complete.pdf" \
+            --pdf-engine=xelatex \
+            -V geometry:margin=1in \
+            -V colorlinks=true \
+            -V linkcolor=blue \
+            -V urlcolor=blue \
+            --toc \
+            --metadata title="Wiki Documentation (Introspect1B)" \
+            --metadata author="Mircea-Tiberiu MATEI" \
+            --metadata date="$(date +'%Y-%m-%d')" \
+            2>&1 || echo "⚠️ Failed to create combined PDF"
+          
+          echo ""
+          echo "✅ PDF conversion complete"
+          ls -lh pdf-output/wiki-complete.pdf
+
+      - name: Create wiki archive
+        run: |
+          cd wiki-repo
+          echo "📦 Creating archive summary..."
+          
+          # Create a summary file in PDF output
+          cat > pdf-output/README.md << EOF
+          # Wiki Documentation Archive
+          
+          **Generated:** $(date +'%Y-%m-%d %H:%M:%S UTC')
+          **Repository:** ${{ github.repository }}
+          **Branch:** ${{ github.ref_name }}
+          
+          ## Contents
+          
+          - \`wiki-complete.pdf\` - Complete wiki documentation with table of contents
+          
+          ## Source Pages
+          
+          EOF
+          
+          # List all source markdown files
+          find . -name "*.md" -type f ! -name "combined.md" | sort | while read file; do
+            echo "- \`${file#./}\`" >> pdf-output/README.md
+          done
+          
+          echo "" >> pdf-output/README.md
+          echo "---" >> pdf-output/README.md
+          echo "" >> pdf-output/README.md
+          echo "Total source pages: $(find . -name "*.md" -type f ! -name "combined.md" | wc -l)" >> pdf-output/README.md
+
+      - name: Upload wiki PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wiki-documentation-${{ github.run_number }}
+          path: wiki-repo/pdf-output/wiki-complete.pdf
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Create release tag
+        id: create_tag
+        run: |
+          TAG_NAME="wiki-$(date +'%Y.%m.%d-%H%M')"
+          CURRENT_DATE="$(date +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "current_date=$CURRENT_DATE" >> $GITHUB_OUTPUT
+          echo "📌 Release tag: $TAG_NAME"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.create_tag.outputs.tag_name }}
+          name:  ${{ steps.create_tag.outputs.tag_name }}
+          body: |
+            # Wiki Documentation
+            
+            **Generated:** ${{ steps.create_tag.outputs.current_date }}
+            **Repository:** ${{ github.repository }}
+            
+            This release contains the complete wiki documentation in PDF format.
+            
+            ## 📄 Contents
+            
+            - `wiki-complete.pdf` - All wiki pages with table of contents
+            
+            ## 📊 Features
+            
+            - ✅ Table of contents
+            - ✅ All wiki pages combined
+            - ✅ Clickable hyperlinks
+            - ✅ Professional formatting
+            - ✅ Images and Mermaid diagrams
+
+            ## 🔗 Download
+            
+            Download the PDF from the assets below.
+          draft: false
+          prerelease: false
+          files: |
+            wiki-repo/pdf-output/wiki-complete.pdf
+
+      - name: Create GitHub Step Summary
+        run: |
+          cd wiki-repo
+          echo "# 📚 Wiki Documentation Published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Successfully converted wiki to PDF and published as release" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Source Pages:** $(find . -name "*.md" -type f ! -name "combined.md" | wc -l)" >> $GITHUB_STEP_SUMMARY
+          echo "- **PDF File:** \`wiki-complete.pdf\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **File Size:** $(ls -lh pdf-output/wiki-complete.pdf | awk '{print $5}')" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release Tag:** \`${{ steps.create_tag.outputs.tag_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Artifact:** \`wiki-documentation-${{ github.run_number }}\` (90 days)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📄 Document Features" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Table of contents" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ All wiki pages in one document" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Clickable hyperlinks" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Professional formatting" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Images and Mermaid diagrams"
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔗 Access" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release:** [View Release](https://github.com/${{ github.repository }}/releases/tag/${{ steps.create_tag.outputs.tag_name }})" >> $GITHUB_STEP_SUMMARY
+          echo "- **Direct Download:** [wiki-complete.pdf](https://github.com/${{ github.repository }}/releases/download/${{ steps.create_tag.outputs.tag_name }}/wiki-complete.pdf)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "💡 **Tip:** The PDF is permanently available via GitHub Releases and temporarily as a workflow artifact." >> $GITHUB_STEP_SUMMARY
