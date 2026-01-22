@@ -1,18 +1,18 @@
-﻿# Cloud Native Architecture Course - Introspect 1B: EKS Dapr Microservices
+﻿# Cloud Native Architecture Course - Introspect 2B: GenAI-enabled Claim Status API
 
-[![1. Start Lab](https://github.com/matei-tm/introspect1B/actions/workflows/start-lab.yml/badge.svg?branch=develop)](https://github.com/matei-tm/introspect1B/actions/workflows/start-lab.yml)
-[![2. Deploy Terraform](https://github.com/matei-tm/introspect1B/actions/workflows/terraform-deploy.yml/badge.svg?branch=develop)](https://github.com/matei-tm/introspect1B/actions/workflows/terraform-deploy.yml)
-[![3. Deploy Services](https://github.com/matei-tm/introspect1B/actions/workflows/deploy-services.yml/badge.svg?branch=develop)](https://github.com/matei-tm/introspect1B/actions/workflows/deploy-services.yml)
-[![4. Test and Logs](https://github.com/matei-tm/introspect1B/actions/workflows/test-and-logs.yml/badge.svg?branch=develop)](https://github.com/matei-tm/introspect1B/actions/workflows/test-and-logs.yml)
+[![1. Start Lab](https://github.com/matei-tm/introspect2B/actions/workflows/start-lab.yml/badge.svg?branch=develop)](https://github.com/matei-tm/introspect2B/actions/workflows/start-lab.yml)
+[![2. Deploy Terraform](https://github.com/matei-tm/introspect2B/actions/workflows/terraform-deploy.yml/badge.svg?branch=develop)](https://github.com/matei-tm/introspect2B/actions/workflows/terraform-deploy.yml)
+[![3. Deploy Services](https://github.com/matei-tm/introspect2B/actions/workflows/deploy-services.yml/badge.svg?branch=develop)](https://github.com/matei-tm/introspect2B/actions/workflows/deploy-services.yml)
+[![4. Test and Logs](https://github.com/matei-tm/introspect2B/actions/workflows/test-and-logs.yml/badge.svg?branch=develop)](https://github.com/matei-tm/introspect2B/actions/workflows/test-and-logs.yml)
 
-- [Cloud Native Architecture Course - Introspect 1B: EKS Dapr Microservices](#cloud-native-architecture-course---introspect-1b-eks-dapr-microservices)
+- [Cloud Native Architecture Course - Introspect 2B: GenAI-enabled Claim Status API](#cloud-native-architecture-course---introspect-2b-genai-enabled-claim-status-api)
   - [⚡ TL;DR - Quick Start](#-tldr---quick-start)
   - [📚 Wiki](#-wiki)
   - [📝 License](#-license)
   - [🤝 Contributing](#-contributing)
 
+GenAI-enabled Claim Status API on AWS using Amazon EKS (on EC2) and Amazon API Gateway.
 
-A complete demonstration of containerized microservices deployed on Amazon EKS with Dapr sidecars implementing pub/sub messaging patterns using AWS SNS/SQS for real-time event-driven interactions.
 
 This project is part of the [CTS - Architecting for Performance CNA Level 2 – Intermediate (GGM)](https://www.niit.com/) course.
 
@@ -48,7 +48,7 @@ That's it! Your microservices are now running on EKS with Dapr pub/sub messaging
 
 ## 📚 Wiki
 
-For detailed setup, local development, and troubleshooting, continue reading the [wiki](https://github.com/matei-tm/introspect1B/wiki).
+For detailed setup, local development, and troubleshooting, continue reading the [wiki](https://github.com/matei-tm/introspect2B/wiki).
 
    <img src="docs/media/wiki.png" alt="Wiki page" width="600" />
 
