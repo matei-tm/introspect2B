@@ -62,13 +62,13 @@ jobs:
           kubectl get components -n ${{ env.NAMESPACE }} | tee -a $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Collect product service logs
-        id: product-logs
+      - name: Collect claims service logs
+        id: claims-logs
         run: |
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📝 Product Service Logs" >> $GITHUB_STEP_SUMMARY
+          echo "## 📝 Claims Service Logs" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          kubectl logs -n ${{ env.NAMESPACE }} deployment/product -c product --tail=20 | tee -a $GITHUB_STEP_SUMMARY || echo "No logs available" | tee -a $GITHUB_STEP_SUMMARY
+          kubectl logs -n ${{ env.NAMESPACE }} deployment/claims -c claims --tail=20 | tee -a $GITHUB_STEP_SUMMARY || echo "No logs available" | tee -a $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Collect order service logs
@@ -80,14 +80,6 @@ jobs:
           kubectl logs -n ${{ env.NAMESPACE }} deployment/order -c order --tail=20 | tee -a $GITHUB_STEP_SUMMARY || echo "No logs available" | tee -a $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Collect Dapr sidecar logs
-        id: daprd-logs
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📡 Product Dapr Sidecar Logs" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          kubectl logs -n ${{ env.NAMESPACE }} deployment/product -c daprd --tail=20 | tee -a $GITHUB_STEP_SUMMARY || echo "No logs available" | tee -a $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Collect CloudWatch agent logs
         id: cw-agent-logs
@@ -113,7 +105,7 @@ jobs:
         run: |
           mkdir -p logs
           {
-            echo "# EKS Dapr Microservices - Test Results and Logs"
+            echo "# EKS Materdemo Microservices - Test Results and Logs"
             echo ""
             echo "**Generated:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
             echo "**Cluster:** ${{ env.EKS_CLUSTER_NAME }}"
@@ -132,35 +124,19 @@ jobs:
             echo '```'
             echo ""
             
-            echo "## 🔧 Dapr Components"
+            echo "## 🔧 Materdemo Components"
             echo '```'
             kubectl get components -n ${{ env.NAMESPACE }}
             echo '```'
             echo ""
             
-            echo "## 📝 Product Service Logs"
+            echo "## 📝 Claims Service Logs"
             echo '```'
-            kubectl logs -n ${{ env.NAMESPACE }} deployment/product -c product --tail=50 || echo "No logs available"
-            echo '```'
-            echo ""
-            
-            echo "## 📝 Order Service Logs"
-            echo '```'
-            kubectl logs -n ${{ env.NAMESPACE }} deployment/order -c order --tail=50 || echo "No logs available"
+            kubectl logs -n ${{ env.NAMESPACE }} deployment/claims -c claims --tail=50 || echo "No logs available"
             echo '```'
             echo ""
             
-            echo "## 📡 Product Dapr Sidecar Logs"
-            echo '```'
-            kubectl logs -n ${{ env.NAMESPACE }} deployment/product -c daprd --tail=50 || echo "No logs available"
-            echo '```'
-            echo ""
-            
-            echo "## 📡 Order Dapr Sidecar Logs"
-            echo '```'
-            kubectl logs -n ${{ env.NAMESPACE }} deployment/order -c daprd --tail=50 || echo "No logs available"
-            echo '```'
-            echo ""
+         
             
             echo "## 📊 CloudWatch Agent Logs"
             echo '```'
@@ -177,8 +153,7 @@ jobs:
             echo "## 💡 Useful Commands"
             echo '```bash'
             echo "# Follow logs in real-time:"
-            echo "kubectl logs -f -n ${{ env.NAMESPACE }} deployment/product -c product"
-            echo "kubectl logs -f -n ${{ env.NAMESPACE }} deployment/order -c order"
+            echo "kubectl logs -f -n ${{ env.NAMESPACE }} deployment/claims -c claims"
             echo "kubectl logs -f -n ${{ env.CLOUDWATCH_NAMESPACE }} daemonset/cloudwatch-agent"
             echo "kubectl logs -f -n ${{ env.CLOUDWATCH_NAMESPACE }} daemonset/fluent-bit"
             echo '```'

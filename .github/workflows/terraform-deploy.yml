@@ -133,7 +133,6 @@ jobs:
           (github.event_name == 'push' && github.ref == 'refs/heads/main')
         run: |
           kubectl get nodes
-          kubectl get pods -n dapr-system
           kubectl get pods -n kube-system | grep metrics-server
 
       - name: Output cluster info

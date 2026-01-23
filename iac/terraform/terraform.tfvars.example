@@ -15,17 +15,14 @@ node_desired_capacity   = 2
 node_min_size          = 1
 node_max_size          = 3
 
-# Dapr Configuration
-dapr_version = "1.12"
 
 # Application Configuration
 namespace = "materclaims"
 
 # ECR Repositories
-ecr_repository_names = ["product-service", "order-service"]
+ecr_repository_names = ["claims-service"]
 
 # AWS Resources
-sns_topic_name       = "orders"
 dynamodb_table_name  = "claims"
 
 # IAM Configuration
