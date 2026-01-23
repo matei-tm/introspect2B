@@ -34,24 +34,21 @@ spec:
 
       containers:
       - name: claim-status-api
-        image: ${ECR_REGISTRY}/claim-status-api:${IMAGE_TAG}
+        image: 322230759107.dkr.ecr.us-east-1.amazonaws.com/claim-status-api:latest
         imagePullPolicy: Always
-        
         ports:
         - containerPort: 8080
           name: http
           protocol: TCP
-        
         env:
         - name: ASPNETCORE_ENVIRONMENT
           value: "Production"
         - name: AWS_DEFAULT_REGION
           value: "us-east-1"
         - name: AWS__DynamoDb__TableName
-          value: "claims"
+          value: "dapr-state-table"
         - name: AWS__S3__BucketName
-          value: "claim-notes"
-        
+          value: "claim-notes-${AWS_ACCOUNT_ID}"
         resources:
           requests:
             memory: "256Mi"
@@ -59,7 +56,6 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
-        
         livenessProbe:
           httpGet:
             path: /health
@@ -68,7 +64,6 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
-        
         readinessProbe:
           httpGet:
             path: /health
@@ -77,7 +72,6 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
-        
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -85,19 +79,16 @@ spec:
           capabilities:
             drop:
             - ALL
-        
         volumeMounts:
         - name: tmp
           mountPath: /tmp
         - name: cache
           mountPath: /home/dotnet/.cache
-      
       volumes:
       - name: tmp
         emptyDir: {}
       - name: cache
         emptyDir: {}
-      
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

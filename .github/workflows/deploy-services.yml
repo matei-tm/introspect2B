@@ -109,9 +109,12 @@ jobs:
 
       - name: Deploy claim-status-api to EKS
         working-directory: src/claim-status-api/k8s
+        env:
+          ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
           echo "Deploying claim-status-api..."
-          kubectl apply -f claim-status-api-deployment.yaml
+          envsubst < claim-status-api-deployment.yaml | kubectl apply -f -
           kubectl apply -f claim-status-api-service.yaml
           
           echo "Waiting for claim-status-api rollout..."
