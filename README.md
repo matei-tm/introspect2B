@@ -349,7 +349,7 @@ introspect2B/
 **Key Resources:**
 
 - **EKS Cluster** — 2+ node group with auto-scaling (0.5–4 nodes)
-- **DynamoDB Table** — `dapr-state-table` (Pay-per-request)
+- **DynamoDB Table** — `claims` (Pay-per-request)
 - **S3 Bucket** — `claim-notes-{account-id}` (Encrypted, versioned)
 - **IAM IRSA** — Service account with least-privilege policies
 - **ECR Repository** — `claim-status-api`
@@ -373,7 +373,7 @@ introspect2B/
         "dynamodb:GetItem",
         "dynamodb:Query"
       ],
-      "Resource": "arn:aws:dynamodb:*:*:table/dapr-state-table"
+      "Resource": "arn:aws:dynamodb:*:*:table/claims"
     },
     {
       "Effect": "Allow",
@@ -511,7 +511,7 @@ aws iam list-role-policies --role-name claim-status-api-role
 **Solutions:**
 ```bash
 # Verify table exists
-aws dynamodb describe-table --table-name dapr-state-table
+aws dynamodb describe-table --table-name claims
 
 # Check IAM policy
 aws iam get-role-policy --role-name claim-status-api-role \

@@ -1,5 +1,5 @@
 # DynamoDB Table for application state store
-resource "aws_dynamodb_table" "dapr_state" {
+resource "aws_dynamodb_table" "claims" {
   name           = var.dynamodb_table_name
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "key"

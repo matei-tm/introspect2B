@@ -51,7 +51,7 @@ A production-ready GenAI-enabled claim management API with two core endpoints:
 ### AWS Integration
 
 #### DynamoDB
-- Table: `dapr-state-table`
+- Table: `claims`
 - Billing: Pay-per-request
 - Items: Claim status documents
 
@@ -126,7 +126,7 @@ claim-status-api/
 ### Terraform Infrastructure
 
 #### AWS Resources
-- **DynamoDB Table**: `aws_dynamodb_table.dapr_state`
+- **DynamoDB Table**: `aws_dynamodb_table.claims`
 - **S3 Bucket**: `aws_s3_bucket.claim_notes`
 - **S3 Public Access Block**: Prevents accidental public exposure
 - **S3 Versioning**: Data protection and recovery
@@ -138,7 +138,7 @@ claim-status-api/
 - **Trust Relationship**: Federated OIDC provider
 
 #### Kubernetes Configuration
-- **Namespace**: `dapr-demo`
+- **Namespace**: `materclaims`
 - **ServiceAccount**: `app-service-account`
 - **Role Annotation**: Maps to IAM role
 
@@ -239,7 +239,7 @@ claim-status-api/
 
 1. **Deploy Infrastructure**
    ```bash
-   cd src/eks-dapr-microservices/terraform
+   cd iac/terraform
    terraform apply
    ```
 
@@ -260,8 +260,8 @@ claim-status-api/
    ```
 
 5. **Monitor & Scale**
-   - View logs: `kubectl logs -n dapr-demo -l app=claim-status-api -f`
-   - Scale replicas: `kubectl scale deployment -n dapr-demo claim-status-api --replicas=3`
+   - View logs: `kubectl logs -n materclaims -l app=claim-status-api -f`
+   - Scale replicas: `kubectl scale deployment -n materclaims claim-status-api --replicas=3`
 
 ## Technology Stack
 

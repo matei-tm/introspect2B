@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: claim-status-api
-  namespace: dapr-demo
+  namespace: materclaims
   labels:
     app: claim-status-api
     version: v1
@@ -48,7 +48,7 @@ spec:
         - name: AWS_DEFAULT_REGION
           value: "us-east-1"
         - name: AWS:DynamoDb:TableName
-          value: "dapr-state-table"
+          value: "claims"
         - name: AWS:S3:BucketName
           value: "claim-notes"
         

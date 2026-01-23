@@ -43,7 +43,7 @@ output "ecr_repositories" {
 
 output "dynamodb_table_name" {
   description = "Name of the DynamoDB table"
-  value       = aws_dynamodb_table.dapr_state.name
+  value       = aws_dynamodb_table.claims.name
 }
 
 output "app_service_account_role_arn" {

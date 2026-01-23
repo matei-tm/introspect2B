@@ -67,7 +67,7 @@ The service requires the following IAM permissions:
 
 Environment variables:
 - `AWS_DEFAULT_REGION` - AWS region (default: us-east-1)
-- `AWS:DynamoDb:TableName` - DynamoDB table name (default: dapr-state-table)
+- `AWS:DynamoDb:TableName` - DynamoDB table name (default: claims)
 - `AWS:S3:BucketName` - S3 bucket for claim notes (default: claim-notes)
 
 ## Deployment
@@ -106,13 +106,13 @@ docker run -p 8080:8080 \
 scripts/deploy-claim-status-api.sh
 
 # Check status
-kubectl get pods -n dapr-demo -l app=claim-status-api
+kubectl get pods -n materclaims -l app=claim-status-api
 
 # View logs
-kubectl logs -n dapr-demo -l app=claim-status-api -f
+kubectl logs -n materclaims -l app=claim-status-api -f
 
 # Port forward for local testing
-kubectl port-forward -n dapr-demo svc/claim-status-api 8080:80
+kubectl port-forward -n materclaims svc/claim-status-api 8080:80
 ```
 
 ## Security

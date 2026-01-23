@@ -1,4 +1,4 @@
-name: 3. Build and Deploy Microservices
+name: 3. Build and Deploy Services
 
 on:
   workflow_dispatch:
@@ -9,8 +9,7 @@ on:
         type: choice
         options:
           - all
-          - product-service
-          - order-service
+          - claim-status-api
   workflow_call:
     inputs:
       service:
@@ -22,17 +21,16 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  EKS_CLUSTER_NAME: dapr-demo-cluster
-  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY || '322230759107.dkr.ecr.us-east-1.amazonaws.com' }}
-  NAMESPACE: dapr-demo
+  EKS_CLUSTER_NAME: claim-status-cluster
+  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+  NAMESPACE: default
 
 jobs:
   setup:
     name: Setup
     runs-on: ubuntu-latest
     outputs:
-      deploy-product: ${{ steps.check.outputs.deploy-product }}
-      deploy-order: ${{ steps.check.outputs.deploy-order }}
+      deploy-claim-api: ${{ steps.check.outputs.deploy-claim-api }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,19 +43,12 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             SERVICE="${{ github.event.inputs.service }}"
             echo "Manual dispatch with service: $SERVICE"
-            if [[ "$SERVICE" == "all" ]] || [[ "$SERVICE" == "product-service" ]]; then
-              echo "deploy-product=true" >> $GITHUB_OUTPUT
-              echo "✅ Product service will be deployed"
+            if [[ "$SERVICE" == "all" ]] || [[ "$SERVICE" == "claim-status-api" ]]; then
+              echo "deploy-claim-api=true" >> $GITHUB_OUTPUT
+              echo "✅ Claim Status API will be deployed"
             else
-              echo "deploy-product=false" >> $GITHUB_OUTPUT
-              echo "⏭️ Product service skipped"
-            fi
-            if [[ "$SERVICE" == "all" ]] || [[ "$SERVICE" == "order-service" ]]; then
-              echo "deploy-order=true" >> $GITHUB_OUTPUT
-              echo "✅ Order service will be deployed"
-            else
-              echo "deploy-order=false" >> $GITHUB_OUTPUT
-              echo "⏭️ Order service skipped"
+              echo "deploy-claim-api=false" >> $GITHUB_OUTPUT
+              echo "⏭️ Claim Status API skipped"
             fi
           else
             # For push events, check which files changed
@@ -65,27 +56,19 @@ jobs:
             CHANGED_FILES=$(git diff --name-only HEAD^ HEAD 2>/dev/null || echo "all")
             echo "Changed files: $CHANGED_FILES"
             
-            if echo "$CHANGED_FILES" | grep -q "src/eks-dapr-microservices/product-service\|src/eks-dapr-microservices/k8s/product" || [[ "$CHANGED_FILES" == "all" ]]; then
-              echo "deploy-product=true" >> $GITHUB_OUTPUT
-              echo "✅ Product service will be deployed"
+            if echo "$CHANGED_FILES" | grep -q "src/claim-status-api\|k8s" || [[ "$CHANGED_FILES" == "all" ]]; then
+              echo "deploy-claim-api=true" >> $GITHUB_OUTPUT
+              echo "✅ Claim Status API will be deployed"
             else
-              echo "deploy-product=false" >> $GITHUB_OUTPUT
-              echo "⏭️ Product service skipped (no changes)"
-            fi
-            
-            if echo "$CHANGED_FILES" | grep -q "src/eks-dapr-microservices/order-service\|src/eks-dapr-microservices/k8s/order" || [[ "$CHANGED_FILES" == "all" ]]; then
-              echo "deploy-order=true" >> $GITHUB_OUTPUT
-              echo "✅ Order service will be deployed"
-            else
-              echo "deploy-order=false" >> $GITHUB_OUTPUT
-              echo "⏭️ Order service skipped (no changes)"
+              echo "deploy-claim-api=false" >> $GITHUB_OUTPUT
+              echo "⏭️ Claim Status API skipped (no changes)"
             fi
           fi
 
-  build-and-deploy-product:
-    name: Build and Deploy Product Service
+  build-and-deploy-claim-api:
+    name: Build and Deploy Claim Status API
     needs: setup
-    if: needs.setup.outputs.deploy-product == 'true'
+    if: needs.setup.outputs.deploy-claim-api == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -102,121 +85,49 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push product-service image to Amazon ECR
-        working-directory: src/eks-dapr-microservices/product-service
+      - name: Build, tag, and push claim-status-api image to Amazon ECR
+        working-directory: src/claim-status-api
         env:
-          ECR_REPOSITORY: product-service
+          ECR_REPOSITORY: claim-status-api
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          echo "Building product-service Docker image for linux/amd64..."
+          echo "Building claim-status-api Docker image for linux/amd64..."
           docker build --platform linux/amd64 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           
-          echo "Pushing product-service Docker image to ECR..."
+          echo "Pushing claim-status-api Docker image to ECR..."
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-          echo "✅ Product service image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "✅ Claim Status API image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
           kubectl cluster-info
 
-      - name: Deploy Dapr components (if needed)
-        working-directory: src/eks-dapr-microservices
+      - name: Deploy claim-status-api to EKS
+        working-directory: src/claim-status-api/k8s
         run: |
-          echo "Applying Dapr components..."
-          kubectl apply -f dapr/ -n ${{ env.NAMESPACE }} || echo "Dapr components already exist or error occurred"
-
-      - name: Deploy product-service to EKS
-        working-directory: src/eks-dapr-microservices/k8s
-        run: |
-          echo "Deploying product-service..."
-          kubectl apply -f product-service.yaml -n ${{ env.NAMESPACE }}
-          envsubst < product-deployment.yaml | kubectl apply -f - -n ${{ env.NAMESPACE }}
+          echo "Deploying claim-status-api..."
+          kubectl apply -f claim-status-api-deployment.yaml
+          kubectl apply -f claim-status-api-service.yaml
           
-          echo "Waiting for product-service rollout..."
-          kubectl rollout status deployment/product -n ${{ env.NAMESPACE }} --timeout=5m
+          echo "Waiting for claim-status-api rollout..."
+          kubectl rollout status deployment/claim-status-api --timeout=5m
           
-          echo "✅ Product service deployed successfully"
+          echo "✅ Claim Status API deployed successfully"
 
-      - name: Verify product-service deployment
+      - name: Verify claim-status-api deployment
         run: |
-          echo "Checking product-service pods..."
-          kubectl get pods -n ${{ env.NAMESPACE }} -l app=product
-          kubectl describe deployment/product -n ${{ env.NAMESPACE }}
-
-  build-and-deploy-order:
-    name: Build and Deploy Order Service
-    needs: setup
-    if: needs.setup.outputs.deploy-order == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build, tag, and push order-service image to Amazon ECR
-        working-directory: src/eks-dapr-microservices/order-service
-        env:
-          ECR_REPOSITORY: order-service
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          echo "Building order-service Docker image for linux/amd64..."
-          docker build --platform linux/amd64 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          
-          echo "Pushing order-service Docker image to ECR..."
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-          echo "✅ Order service image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-
-      - name: Update kubeconfig
-        run: |
-          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
-          kubectl cluster-info
-
-      - name: Deploy Dapr components (if needed)
-        working-directory: src/eks-dapr-microservices
-        run: |
-          echo "Applying Dapr components..."
-          kubectl apply -f dapr/ -n ${{ env.NAMESPACE }} || echo "Dapr components already exist or error occurred"
-
-      - name: Deploy order-service to EKS
-        working-directory: src/eks-dapr-microservices/k8s
-        run: |
-          echo "Deploying order-service..."
-          kubectl apply -f order-service.yaml -n ${{ env.NAMESPACE }}
-          envsubst < order-deployment.yaml | kubectl apply -f - -n ${{ env.NAMESPACE }}
-          
-          echo "Waiting for order-service rollout..."
-          kubectl rollout status deployment/order -n ${{ env.NAMESPACE }} --timeout=5m
-          
-          echo "✅ Order service deployed successfully"
-
-      - name: Verify order-service deployment
-        run: |
-          echo "Checking order-service pods..."
-          kubectl get pods -n ${{ env.NAMESPACE }} -l app=order
-          kubectl describe deployment/order -n ${{ env.NAMESPACE }}
+          echo "Checking claim-status-api pods..."
+          kubectl get pods -l app=claim-status-api
+          kubectl describe deployment/claim-status-api
 
   summary:
     name: Deployment Summary
-    needs: [setup, build-and-deploy-product, build-and-deploy-order]
+    needs: [setup, build-and-deploy-claim-api]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -227,24 +138,14 @@ jobs:
           echo "## Services Deployed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          if [[ "${{ needs.setup.outputs.deploy-product }}" == "true" ]]; then
-            if [[ "${{ needs.build-and-deploy-product.result }}" == "success" ]]; then
-              echo "✅ **Product Service**: Deployed successfully" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ needs.setup.outputs.deploy-claim-api }}" == "true" ]]; then
+            if [[ "${{ needs.build-and-deploy-claim-api.result }}" == "success" ]]; then
+              echo "✅ **Claim Status API**: Deployed successfully" >> $GITHUB_STEP_SUMMARY
             else
-              echo "❌ **Product Service**: Deployment failed" >> $GITHUB_STEP_SUMMARY
+              echo "❌ **Claim Status API**: Deployment failed" >> $GITHUB_STEP_SUMMARY
             fi
           else
-            echo "⏭️ **Product Service**: Skipped (no changes)" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          if [[ "${{ needs.setup.outputs.deploy-order }}" == "true" ]]; then
-            if [[ "${{ needs.build-and-deploy-order.result }}" == "success" ]]; then
-              echo "✅ **Order Service**: Deployed successfully" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "❌ **Order Service**: Deployment failed" >> $GITHUB_STEP_SUMMARY
-            fi
-          else
-            echo "⏭️ **Order Service**: Skipped (no changes)" >> $GITHUB_STEP_SUMMARY
+            echo "⏭️ **Claim Status API**: Skipped (no changes)" >> $GITHUB_STEP_SUMMARY
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY

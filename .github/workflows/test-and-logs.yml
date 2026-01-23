@@ -6,8 +6,8 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  EKS_CLUSTER_NAME: dapr-demo-cluster
-  NAMESPACE: dapr-demo
+  EKS_CLUSTER_NAME: materclaims-cluster
+  NAMESPACE: materclaims
   CLOUDWATCH_NAMESPACE: amazon-cloudwatch
 
 jobs:

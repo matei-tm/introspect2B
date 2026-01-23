@@ -50,7 +50,7 @@ terraform apply
 **What gets created:**
 - EKS Cluster with managed node groups
 - VPC and networking
-- DynamoDB table (`dapr-state-table`)
+- DynamoDB table (`claims`)
 - S3 bucket for claim notes
 - IAM roles for IRSA
 - ECR repository for container images
@@ -89,8 +89,8 @@ kubectl apply -f k8s/claim-status-api-deployment.yaml
 kubectl apply -f k8s/claim-status-api-service.yaml
 
 # Verify deployment
-kubectl get pods -n dapr-demo -l app=claim-status-api
-kubectl get svc -n dapr-demo claim-status-api
+kubectl get pods -n materclaims -l app=claim-status-api
+kubectl get svc -n materclaims claim-status-api
 ```
 
 ### Step 4: Initialize Sample Data
@@ -100,7 +100,7 @@ kubectl get svc -n dapr-demo claim-status-api
 ./scripts/init-sample-data.sh
 
 # Verify data
-aws dynamodb scan --table-name dapr-state-table --region us-east-1
+aws dynamodb scan --table-name claims --region us-east-1
 aws s3 ls s3://claim-notes-$(aws sts get-caller-identity --query Account --output text)/ --recursive
 ```
 
@@ -110,7 +110,7 @@ aws s3 ls s3://claim-notes-$(aws sts get-caller-identity --query Account --outpu
 
 ```bash
 # Port forward the service
-kubectl port-forward -n dapr-demo svc/claim-status-api 8080:80
+kubectl port-forward -n materclaims svc/claim-status-api 8080:80
 
 # Test in another terminal
 # 1. Get claim status
@@ -131,13 +131,13 @@ curl http://localhost:8080/swagger
 
 ```bash
 # View logs from all pods
-kubectl logs -n dapr-demo -l app=claim-status-api -f
+kubectl logs -n materclaims -l app=claim-status-api -f
 
 # View logs from specific pod
-kubectl logs -n dapr-demo <pod-name> -f
+kubectl logs -n materclaims <pod-name> -f
 
 # Get deployment details
-kubectl describe deployment -n dapr-demo claim-status-api
+kubectl describe deployment -n materclaims claim-status-api
 ```
 
 ### Monitor Health
@@ -147,10 +147,10 @@ kubectl describe deployment -n dapr-demo claim-status-api
 curl http://localhost:8080/health
 
 # Check pod status
-kubectl get pods -n dapr-demo -l app=claim-status-api
+kubectl get pods -n materclaims -l app=claim-status-api
 
 # Watch pod events
-kubectl get events -n dapr-demo --sort-by='.lastTimestamp'
+kubectl get events -n materclaims --sort-by='.lastTimestamp'
 ```
 
 ## Configuration
@@ -167,7 +167,7 @@ Key configurations:
 ```yaml
 AWS:
   DynamoDb:
-    TableName: dapr-state-table
+    TableName: claims
   S3:
     BucketName: claim-notes-{account-id}
   Bedrock:
@@ -180,7 +180,7 @@ Update service configuration:
 
 ```bash
 kubectl set env deployment/claim-status-api \
-  -n dapr-demo \
+  -n materclaims \
   AWS:S3:BucketName=my-custom-bucket
 ```
 
@@ -190,10 +190,10 @@ kubectl set env deployment/claim-status-api \
 
 ```bash
 # Check pod status and events
-kubectl describe pod <pod-name> -n dapr-demo
+kubectl describe pod <pod-name> -n materclaims
 
 # Check logs
-kubectl logs <pod-name> -n dapr-demo
+kubectl logs <pod-name> -n materclaims
 
 # Common issues:
 # - Image not available in ECR: Re-push the image
@@ -206,7 +206,7 @@ kubectl logs <pod-name> -n dapr-demo
 ```bash
 # Verify claim exists in DynamoDB
 aws dynamodb get-item \
-  --table-name dapr-state-table \
+  --table-name claims \
   --key '{"id":{"S":"CLAIM-001"}}' \
   --region us-east-1
 ```
@@ -254,8 +254,8 @@ To remove all resources:
 
 ```bash
 # Delete Kubernetes resources
-kubectl delete deployment -n dapr-demo claim-status-api
-kubectl delete svc -n dapr-demo claim-status-api
+kubectl delete deployment -n materclaims claim-status-api
+kubectl delete svc -n materclaims claim-status-api
 
 # Destroy Terraform resources
 cd iac/terraform
@@ -276,7 +276,7 @@ terraform destroy
 ## Support
 
 For issues, errors, or questions:
-1. Check the logs: `kubectl logs -n dapr-demo -l app=claim-status-api -f`
+1. Check the logs: `kubectl logs -n materclaims -l app=claim-status-api -f`
 2. Review AWS service quotas
 3. Verify IAM permissions
 4. Check Bedrock model availability

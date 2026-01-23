@@ -14,7 +14,7 @@ Get the Claim Status API up and running in 5 minutes.
 ### 1️⃣ Deploy Infrastructure (3 min)
 
 ```bash
-cd src/eks-dapr-microservices/terraform
+cd iac/terraform
 
 terraform init
 terraform apply -auto-approve
@@ -54,7 +54,7 @@ cd src/eks-dapr-microservices
 ### Port Forward
 
 ```bash
-kubectl port-forward -n dapr-demo svc/claim-status-api 8080:80 &
+kubectl port-forward -n materclaims svc/claim-status-api 8080:80 &
 ```
 
 ### Test Endpoints
@@ -79,37 +79,37 @@ open http://localhost:8080/swagger
 ## View Logs
 
 ```bash
-kubectl logs -n dapr-demo -l app=claim-status-api -f
+kubectl logs -n materclaims -l app=claim-status-api -f
 ```
 
 ## Scale the Service
 
 ```bash
-kubectl scale deployment -n dapr-demo claim-status-api --replicas=3
+kubectl scale deployment -n materclaims claim-status-api --replicas=3
 ```
 
 ## Check Status
 
 ```bash
 # Deployment status
-kubectl get deployment -n dapr-demo claim-status-api
+kubectl get deployment -n materclaims claim-status-api
 
 # Pod status
-kubectl get pods -n dapr-demo -l app=claim-status-api
+kubectl get pods -n materclaims -l app=claim-status-api
 
 # Service endpoint
-kubectl get svc -n dapr-demo claim-status-api
+kubectl get svc -n materclaims claim-status-api
 ```
 
 ## Cleanup
 
 ```bash
 # Delete Kubernetes resources
-kubectl delete deployment -n dapr-demo claim-status-api
-kubectl delete svc -n dapr-demo claim-status-api
+kubectl delete deployment -n materclaims claim-status-api
+kubectl delete svc -n materclaims claim-status-api
 
 # Destroy AWS infrastructure
-cd src/eks-dapr-microservices/terraform
+cd iac/terraform
 terraform destroy -auto-approve
 ```
 
@@ -157,14 +157,14 @@ Response:
 
 ### Pods not starting?
 ```bash
-kubectl describe pod <pod-name> -n dapr-demo
+kubectl describe pod <pod-name> -n materclaims
 ```
 
 ### API returning 404?
 ```bash
 # Check claim exists
 aws dynamodb get-item \
-  --table-name dapr-state-table \
+  --table-name claims \
   --key '{"id":{"S":"CLAIM-001"}}' \
   --region us-east-1
 ```
@@ -196,7 +196,7 @@ Claim Status API (2 replicas)
 For detailed information, see:
 - [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Full deployment instructions
 - [IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md) - Architecture details
-- Service logs: `kubectl logs -n dapr-demo -l app=claim-status-api -f`
+- Service logs: `kubectl logs -n materclaims -l app=claim-status-api -f`
 
 ---
 
@@ -208,11 +208,11 @@ For detailed information, see:
 ./scripts/deploy-claim-status-api.sh
 
 # Test
-kubectl port-forward -n dapr-demo svc/claim-status-api 8080:80
+kubectl port-forward -n materclaims svc/claim-status-api 8080:80
 curl http://localhost:8080/api/claims/CLAIM-001
 
 # Monitor
-kubectl logs -n dapr-demo -l app=claim-status-api -f
+kubectl logs -n materclaims -l app=claim-status-api -f
 ```
 
 **Happy deploying! 🚀**

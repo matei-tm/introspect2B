@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "cluster_name" {
   description = "Name of the EKS cluster"
   type        = string
-  default     = "dapr-demo-cluster"
+  default     = "materclaims-cluster"
 }
 
 variable "environment" {
@@ -67,7 +67,7 @@ variable "node_max_size" {
 variable "namespace" {
   description = "Kubernetes namespace for applications"
   type        = string
-  default     = "dapr-demo"
+  default     = "materclaims"
 }
 
 variable "ecr_repository_names" {
@@ -79,7 +79,7 @@ variable "ecr_repository_names" {
 variable "dynamodb_table_name" {
   description = "DynamoDB table name for state store"
   type        = string
-  default     = "dapr-state-table"
+  default     = "claims"
 }
 
 variable "attach_ec2_policy_to_current_user" {

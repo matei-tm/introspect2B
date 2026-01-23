@@ -125,7 +125,7 @@ jobs:
           github.event.inputs.action == 'apply' || 
           (github.event_name == 'push' && github.ref == 'refs/heads/main')
         run: |
-          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name dapr-demo-cluster
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name materclaims-cluster
 
       - name: Verify cluster access
         if: |

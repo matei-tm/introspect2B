@@ -38,4 +38,4 @@ terraform.rc
 *.tfplan
 *.tfplan.*
 .secrets
-src/eks-dapr-microservices/scripts/logs.md
+src/scripts/logs.md
