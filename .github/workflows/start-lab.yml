@@ -20,7 +20,9 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        uses: microsoft/playwright-github-action@v1
+        with:
+          with-deps: true
 
       - name: Initialize the lab environment
         working-directory: src/labinit
