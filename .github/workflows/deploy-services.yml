@@ -24,6 +24,7 @@ env:
   EKS_CLUSTER_NAME: materclaims-cluster
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
   NAMESPACE: materclaims
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
 
 jobs:
   setup:
