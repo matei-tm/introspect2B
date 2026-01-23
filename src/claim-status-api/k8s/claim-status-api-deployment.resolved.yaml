@@ -34,7 +34,7 @@ spec:
 
       containers:
       - name: claim-status-api
-        image: 322230759107.dkr.ecr.us-east-1.amazonaws.com/claim-status-api:latest
+        image: ${ECR_REGISTRY}//claim-status-api:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
