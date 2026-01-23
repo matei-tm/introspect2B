@@ -1,6 +1,7 @@
 using Amazon.DynamoDBv2;
 using Amazon.S3;
 using Amazon.BedrockRuntime;
+using Amazon.Extensions.NETCore.Setup;
 using ClaimStatusApi.Services;
 using Serilog;
 
@@ -15,9 +16,10 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Add AWS services
+builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
 builder.Services.AddAWSService<IAmazonDynamoDB>();
 builder.Services.AddAWSService<IAmazonS3>();
-builder.Services.AddScoped<AmazonBedrockRuntimeClient>();
+builder.Services.AddAWSService<IAmazonBedrockRuntime>();
 
 // Add custom services
 builder.Services.AddScoped<IDynamoDbService, DynamoDbService>();

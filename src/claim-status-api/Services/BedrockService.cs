@@ -2,20 +2,23 @@ using Amazon.BedrockRuntime;
 using Amazon.BedrockRuntime.Model;
 using ClaimStatusApi.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using System.Text;
 using System.Text.Json;
 
 namespace ClaimStatusApi.Services;
 
 public class BedrockService : IBedrockService
 {
-    private readonly AmazonBedrockRuntimeClient _bedrockClient;
+    private readonly IAmazonBedrockRuntime _bedrockRuntime;
     private readonly ILogger<BedrockService> _logger;
-    private const string ModelId = "anthropic.claude-3-haiku-20240307-v1:0";
+    private readonly string _modelId;
 
-    public BedrockService(AmazonBedrockRuntimeClient bedrockClient, ILogger<BedrockService> logger)
+    public BedrockService(IAmazonBedrockRuntime bedrockRuntime, ILogger<BedrockService> logger, IConfiguration config)
     {
-        _bedrockClient = bedrockClient;
+        _bedrockRuntime = bedrockRuntime;
         _logger = logger;
+        _modelId = config["AWS:Bedrock:ModelId"] ?? "anthropic.claude-3-haiku-20240307-v1:0";
     }
 
     public async Task<ClaimSummary> GenerateSummaryAsync(string claimId, string claimNotes)
@@ -57,27 +60,33 @@ Ensure the response is valid JSON that can be parsed.";
 
     private async Task<string> InvokeClaudeAsync(string prompt)
     {
-        var request = new InvokeModelRequest
+        var payload = JsonSerializer.Serialize(new
         {
-            ModelId = ModelId,
-            ContentType = "application/json",
-            Accept = "application/json",
-            Body = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new
+            anthropic_version = "bedrock-2023-09-30",
+            max_tokens = 1024,
+            temperature = 0.7,
+            messages = new[]
             {
-                anthropic_version = "bedrock-2023-06-01",
-                max_tokens = 1024,
-                messages = new[]
+                new
                 {
-                    new
+                    role = "user",
+                    content = new[]
                     {
-                        role = "user",
-                        content = prompt
+                        new { type = "text", text = prompt }
                     }
                 }
-            })))
+            }
+        });
+
+        var request = new InvokeModelRequest
+        {
+            ModelId = _modelId,
+            ContentType = "application/json",
+            Accept = "application/json",
+            Body = new MemoryStream(Encoding.UTF8.GetBytes(payload))
         };
 
-        var response = await _bedrockClient.InvokeModelAsync(request);
+        var response = await _bedrockRuntime.InvokeModelAsync(request);
         
         using (var reader = new StreamReader(response.Body))
         {
@@ -120,7 +129,7 @@ Ensure the response is valid JSON that can be parsed.";
                     AdjusterFocusedSummary = summaryRoot.GetProperty("adjuster_focused_summary").GetString() ?? string.Empty,
                     RecommendedNextStep = summaryRoot.GetProperty("recommended_next_step").GetString() ?? string.Empty,
                     GeneratedAt = DateTime.UtcNow,
-                    Model = ModelId
+                    Model = _modelId
                 };
             }
         }
