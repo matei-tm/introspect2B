@@ -114,19 +114,19 @@ jobs:
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
           echo "Deploying claim-status-api..."
-          envsubst < claim-status-api-deployment.yaml | kubectl apply -f -
-          kubectl apply -f claim-status-api-service.yaml
+          envsubst < claim-status-api-deployment.yaml | kubectl apply -f - -n ${{ env.NAMESPACE }}
+          kubectl apply -f claim-status-api-service.yaml -n ${{ env.NAMESPACE }}
           
           echo "Waiting for claim-status-api rollout..."
-          kubectl rollout status deployment/claim-status-api --timeout=5m
+          kubectl rollout status deployment/claim-status-api -n ${{ env.NAMESPACE }} --timeout=5m
           
           echo "✅ Claim Status API deployed successfully"
 
       - name: Verify claim-status-api deployment
         run: |
           echo "Checking claim-status-api pods..."
-          kubectl get pods -l app=claim-status-api
-          kubectl describe deployment/claim-status-api
+          kubectl get pods -l app=claim-status-api -n ${{ env.NAMESPACE }}
+          kubectl describe deployment/claim-status-api -n ${{ env.NAMESPACE }}
 
   summary:
     name: Deployment Summary
