@@ -34,7 +34,7 @@ spec:
 
       containers:
       - name: claim-status-api
-        image: ${ECR_REGISTRY}/claim-status-api:${IMAGE_TAG}
+        image: ${ECR_REGISTRY}/claim-status-api:latest
         imagePullPolicy: Always
         
         ports:
@@ -50,8 +50,7 @@ spec:
         - name: AWS__DynamoDb__TableName
           value: "claims"
         - name: AWS__S3__BucketName
-          value: "claim-notes"
-        
+          value: "claim-notes-${AWS_ACCOUNT_ID}"
         resources:
           requests:
             memory: "256Mi"
