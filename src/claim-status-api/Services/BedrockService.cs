@@ -3,6 +3,7 @@ using Amazon.BedrockRuntime.Model;
 using ClaimStatusApi.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 
@@ -13,12 +14,16 @@ public class BedrockService : IBedrockService
     private readonly IAmazonBedrockRuntime _bedrockRuntime;
     private readonly ILogger<BedrockService> _logger;
     private readonly string _modelId;
+    private readonly string _inferenceProfileId;
+    private readonly string _inferenceProfileArn;
 
     public BedrockService(IAmazonBedrockRuntime bedrockRuntime, ILogger<BedrockService> logger, IConfiguration config)
     {
         _bedrockRuntime = bedrockRuntime;
         _logger = logger;
         _modelId = config["AWS:Bedrock:ModelId"] ?? "anthropic.claude-3-haiku-20240307-v1:0";
+        _inferenceProfileId = config["AWS:Bedrock:InferenceProfileId"] ?? string.Empty;
+        _inferenceProfileArn = config["AWS:Bedrock:InferenceProfileArn"] ?? string.Empty;
     }
 
     public async Task<ClaimSummary> GenerateSummaryAsync(string claimId, string claimNotes)
@@ -26,9 +31,13 @@ public class BedrockService : IBedrockService
         try
         {
             var prompt = BuildPrompt(claimNotes);
-            var response = await InvokeClaudeAsync(prompt);
+            var target = !string.IsNullOrWhiteSpace(_inferenceProfileId)
+                ? _inferenceProfileId
+                : (!string.IsNullOrWhiteSpace(_inferenceProfileArn) ? _inferenceProfileArn : _modelId);
+            _logger.LogInformation("Invoking Bedrock target {Target} for claim {ClaimId}", target, claimId);
+            var responseText = await InvokeConverseAsync(prompt);
             
-            var summary = ParseSummaryResponse(response, claimId);
+            var summary = ParseSummaryResponse(responseText, claimId);
             _logger.LogInformation($"Successfully generated summary for claim {claimId}");
             
             return summary;
@@ -58,85 +67,109 @@ Please provide your response in the following JSON format:
 Ensure the response is valid JSON that can be parsed.";
     }
 
-    private async Task<string> InvokeClaudeAsync(string prompt)
+    private async Task<string> InvokeConverseAsync(string prompt)
     {
-        var payload = JsonSerializer.Serialize(new
+        var target = !string.IsNullOrWhiteSpace(_inferenceProfileId)
+            ? _inferenceProfileId
+            : (!string.IsNullOrWhiteSpace(_inferenceProfileArn) ? _inferenceProfileArn : _modelId);
+        var request = new Amazon.BedrockRuntime.Model.ConverseRequest
         {
-            anthropic_version = "bedrock-2023-09-30",
-            max_tokens = 1024,
-            temperature = 0.7,
-            messages = new[]
+            ModelId = target,
+            Messages = new List<Amazon.BedrockRuntime.Model.Message>
             {
-                new
+                new Amazon.BedrockRuntime.Model.Message
                 {
-                    role = "user",
-                    content = new[]
+                    Role = "user",
+                    Content = new List<Amazon.BedrockRuntime.Model.ContentBlock>
                     {
-                        new { type = "text", text = prompt }
+                        new Amazon.BedrockRuntime.Model.ContentBlock { Text = prompt }
                     }
                 }
             }
-        });
-
-        var request = new InvokeModelRequest
-        {
-            ModelId = _modelId,
-            ContentType = "application/json",
-            Accept = "application/json",
-            Body = new MemoryStream(Encoding.UTF8.GetBytes(payload))
         };
 
-        var response = await _bedrockRuntime.InvokeModelAsync(request);
-        
-        using (var reader = new StreamReader(response.Body))
+        var response = await _bedrockRuntime.ConverseAsync(request);
+
+        // Extract the generated text from the Converse response
+        var outputMessage = response.Output?.Message;
+        if (outputMessage?.Content != null)
         {
-            return await reader.ReadToEndAsync();
+            foreach (var block in outputMessage.Content)
+            {
+                if (!string.IsNullOrEmpty(block.Text))
+                {
+                    return block.Text;
+                }
+            }
         }
+
+        _logger.LogWarning("Converse returned no text for target {Target}", target);
+        return string.Empty;
     }
 
-    private ClaimSummary ParseSummaryResponse(string response, string claimId)
+    private ClaimSummary ParseSummaryResponse(string responseText, string claimId)
     {
         try
         {
-            using (var jsonDoc = JsonDocument.Parse(response))
+            var jsonPayload = ExtractJsonPayload(responseText);
+            var summaryJson = JsonDocument.Parse(jsonPayload);
+            var summaryRoot = summaryJson.RootElement;
+
+            return new ClaimSummary
             {
-                var root = jsonDoc.RootElement;
-                
-                // Extract content from Bedrock response
-                string extractedText = string.Empty;
-                
-                if (root.TryGetProperty("content", out var contentArray) && contentArray.ValueKind == System.Text.Json.JsonValueKind.Array)
-                {
-                    foreach (var item in contentArray.EnumerateArray())
-                    {
-                        if (item.TryGetProperty("text", out var textProp))
-                        {
-                            extractedText = textProp.GetString() ?? string.Empty;
-                            break;
-                        }
-                    }
-                }
-
-                // Parse the extracted JSON from Claude
-                var summaryJson = JsonDocument.Parse(extractedText);
-                var summaryRoot = summaryJson.RootElement;
-
-                return new ClaimSummary
-                {
-                    ClaimId = claimId,
-                    OverallSummary = summaryRoot.GetProperty("overall_summary").GetString() ?? string.Empty,
-                    CustomerFacingSummary = summaryRoot.GetProperty("customer_facing_summary").GetString() ?? string.Empty,
-                    AdjusterFocusedSummary = summaryRoot.GetProperty("adjuster_focused_summary").GetString() ?? string.Empty,
-                    RecommendedNextStep = summaryRoot.GetProperty("recommended_next_step").GetString() ?? string.Empty,
-                    GeneratedAt = DateTime.UtcNow,
-                    Model = _modelId
-                };
-            }
+                ClaimId = claimId,
+                OverallSummary = summaryRoot.GetProperty("overall_summary").GetString() ?? string.Empty,
+                CustomerFacingSummary = summaryRoot.GetProperty("customer_facing_summary").GetString() ?? string.Empty,
+                AdjusterFocusedSummary = summaryRoot.GetProperty("adjuster_focused_summary").GetString() ?? string.Empty,
+                RecommendedNextStep = summaryRoot.GetProperty("recommended_next_step").GetString() ?? string.Empty,
+                GeneratedAt = DateTime.UtcNow,
+                Model = !string.IsNullOrWhiteSpace(_inferenceProfileId)
+                    ? _inferenceProfileId
+                    : (!string.IsNullOrWhiteSpace(_inferenceProfileArn) ? _inferenceProfileArn : _modelId)
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error parsing Bedrock response");
             throw;
         }
+    }
+
+    private static string ExtractJsonPayload(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return "{}";
+        }
+
+        var trimmed = text.Trim();
+
+        // Handle fenced code blocks like ```json ... ```
+        if (trimmed.StartsWith("```", StringComparison.Ordinal))
+        {
+            int firstFence = trimmed.IndexOf("```", StringComparison.Ordinal);
+            int secondFence = trimmed.IndexOf("```", firstFence + 3, StringComparison.Ordinal);
+            if (secondFence > firstFence)
+            {
+                var inner = trimmed.Substring(firstFence + 3, secondFence - (firstFence + 3)).Trim();
+                // Remove optional language tag (e.g., 'json') at the start
+                if (inner.StartsWith("json", StringComparison.OrdinalIgnoreCase))
+                {
+                    inner = inner.Substring(4).Trim();
+                }
+                return inner;
+            }
+        }
+
+        // Fallback: extract between first '{' and last '}'
+        int start = trimmed.IndexOf('{');
+        int end = trimmed.LastIndexOf('}');
+        if (start >= 0 && end > start)
+        {
+            return trimmed.Substring(start, end - start + 1);
+        }
+
+        // As a last resort, return the original trimmed text
+        return trimmed;
     }
 }

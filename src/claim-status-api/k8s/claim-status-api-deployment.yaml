@@ -52,7 +52,9 @@ spec:
         - name: AWS__S3__BucketName
           value: "claim-notes-${AWS_ACCOUNT_ID}"
         - name: AWS__Bedrock__ModelId
-          value: "anthropic.claude-3-haiku-20240307-v1:0"
+          value: "amazon.nova-2-lite-v1:0"
+        - name: AWS__Bedrock__InferenceProfileId
+          value: "us.amazon.nova-lite-v1:0"
         resources:
           requests:
             memory: "256Mi"
