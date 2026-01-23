@@ -26,8 +26,10 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 COPY --from=publish /app/publish .
 
-# Create non-root user
-RUN useradd -m -u 1000 dotnet && chown -R dotnet:dotnet /app
+# Create non-root user (avoid UID conflicts)
+RUN if ! id -u dotnet >/dev/null 2>&1; then \
+			useradd -r -s /usr/sbin/nologin -U -d /app dotnet; \
+		fi && chown -R dotnet:dotnet /app
 USER dotnet
 
 EXPOSE 8080

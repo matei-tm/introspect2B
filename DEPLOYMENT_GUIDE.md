@@ -66,7 +66,7 @@ export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output tex
 export ECR_REPO=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
 # Build Docker image
-docker build -t claim-status-api:latest .
+docker build  --platform linux/amd64 -t claim-status-api:latest .
 
 # Tag for ECR
 docker tag claim-status-api:latest ${ECR_REPO}/claim-status-api:latest

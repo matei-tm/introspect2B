@@ -47,9 +47,9 @@ spec:
           value: "Production"
         - name: AWS_DEFAULT_REGION
           value: "us-east-1"
-        - name: AWS:DynamoDb:TableName
+        - name: AWS__DynamoDb__TableName
           value: "claims"
-        - name: AWS:S3:BucketName
+        - name: AWS__S3__BucketName
           value: "claim-notes"
         
         resources:
