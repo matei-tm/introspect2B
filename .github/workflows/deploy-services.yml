@@ -21,7 +21,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  EKS_CLUSTER_NAME: claim-status-cluster
+  EKS_CLUSTER_NAME: materclaims
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
   NAMESPACE: default
 
