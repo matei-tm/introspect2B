@@ -1,0 +1,20 @@
+meta {
+  name: summarize
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8080/api/claims/CLAIM-001/summarize
+  body: none
+  auth: inherit
+}
+
+body:json {
+  {"notesOverride":"Patient John Smith submitted medical claim for emergency room visit on 01/15/2024. Diagnosis: acute myocardial infarction. Treatment included: ECG, troponin tests, cardiac catheterization, and stent placement. Hospital stay: 5 days in cardiac ICU. Medications prescribed: aspirin, clopidogrel, atorvastatin, metoprolol. Follow-up cardiology appointments scheduled. Preliminary assessment: covered under emergency medical provisions. Awaiting final pathology and discharge summary."}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

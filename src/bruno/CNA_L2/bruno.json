@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "CNA_L2",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

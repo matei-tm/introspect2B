@@ -1,0 +1,16 @@
+meta {
+  name: get_claim_001
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:8080/api/claims/CLAIM-001
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
