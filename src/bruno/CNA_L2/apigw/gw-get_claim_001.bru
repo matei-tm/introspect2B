@@ -1,0 +1,20 @@
+meta {
+  name: gw-get_claim_001
+  type: http
+  seq: 5
+}
+
+get {
+  url: https://{{apiendpoint}}.execute-api.us-east-1.amazonaws.com/dev/api/claims/CLAIM-001
+  body: none
+  auth: inherit
+}
+
+vars:pre-request {
+  apiendpoint: az74mf0hr0
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
