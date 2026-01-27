@@ -15,6 +15,10 @@ Parameters:
       - dev
       - staging
       - prod
+  DeploymentVersion:
+    Type: String
+    Default: v1
+    Description: Bump this value to force a new API Gateway deployment
 
 Resources:
   ClaimStatusApi:
@@ -60,13 +64,16 @@ Resources:
       RestApiId: !Ref ClaimStatusApi
       ResourceId: !Ref ClaimIdResource
       HttpMethod: GET
-      AuthorizationType: AWS_IAM
+      AuthorizationType: NONE
+      ApiKeyRequired: true
       RequestParameters:
         method.request.path.id: true
       Integration:
         Type: HTTP
         IntegrationHttpMethod: GET
         Uri: !Sub http://${ServiceEndpoint}/api/claims/{id}
+        RequestParameters:
+          integration.request.path.id: method.request.path.id
         RequestTemplates:
           application/json: '{"id": "$input.params(''id'')"}'
         IntegrationResponses:
@@ -81,7 +88,8 @@ Resources:
       RestApiId: !Ref ClaimStatusApi
       ResourceId: !Ref SummarizeResource
       HttpMethod: POST
-      AuthorizationType: AWS_IAM
+      AuthorizationType: NONE
+      ApiKeyRequired: true
       RequestParameters:
         method.request.path.id: true
       RequestModels:
@@ -90,6 +98,8 @@ Resources:
         Type: HTTP
         IntegrationHttpMethod: POST
         Uri: !Sub http://${ServiceEndpoint}/api/claims/{id}/summarize
+        RequestParameters:
+          integration.request.path.id: method.request.path.id
         RequestTemplates:
           application/json: |
             {
@@ -123,7 +133,42 @@ Resources:
       - SummarizeClaimMethod
     Properties:
       RestApiId: !Ref ClaimStatusApi
+      Description: !Sub "Deployment-${EnvironmentName}-${DeploymentVersion}"
+
+  ApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId: !Ref ClaimStatusApi
+      DeploymentId: !Ref ApiDeployment
       StageName: !Ref EnvironmentName
+
+  ApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: !Sub claim-status-api-${EnvironmentName}-key
+      Enabled: true
+      GenerateDistinctId: true
+
+  UsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      UsagePlanName: !Sub claim-status-api-${EnvironmentName}-plan
+      ApiStages:
+        - ApiId: !Ref ClaimStatusApi
+          Stage: !Ref EnvironmentName
+      Throttle:
+        RateLimit: 100.0
+        BurstLimit: 50
+      Quota:
+        Limit: 100000
+        Period: MONTH
+
+  UsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref ApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref UsagePlan
 
 Outputs:
   ApiEndpoint:
@@ -138,3 +183,15 @@ Outputs:
     Value: !Ref ClaimStatusApi
     Export:
       Name: !Sub ClaimStatusApiId-${EnvironmentName}
+
+  ApiKeyId:
+    Description: API Key ID
+    Value: !Ref ApiKey
+    Export:
+      Name: !Sub ClaimStatusApiKeyId-${EnvironmentName}
+
+  UsagePlanId:
+    Description: Usage Plan ID
+    Value: !Ref UsagePlan
+    Export:
+      Name: !Sub ClaimStatusApiUsagePlanId-${EnvironmentName}
