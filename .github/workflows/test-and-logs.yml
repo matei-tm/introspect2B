@@ -53,14 +53,7 @@ jobs:
           kubectl get pods -n ${{ env.CLOUDWATCH_NAMESPACE }} | tee -a $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Check Dapr components
-        id: dapr
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🔧 Dapr Components" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          kubectl get components -n ${{ env.NAMESPACE }} | tee -a $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+
 
       - name: Collect claims service logs
         id: claims-logs
