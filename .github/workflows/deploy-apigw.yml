@@ -1,0 +1,98 @@
+name: Deploy API Gateway
+
+on:
+    workflow_dispatch:
+        inputs:
+            service_endpoint:
+                description: "NLB/ALB DNS name for claim-status-api (no scheme)"
+                required: true
+            environment_name:
+                description: "API Gateway stage name"
+                required: true
+                type: choice
+                options:
+                    - dev
+                    - staging
+                    - prod
+                default: dev
+            aws_region:
+                description: "AWS region"
+                required: true
+                default: us-east-1
+            assume_role_arn:
+                description: "Optional IAM Role ARN to assume via OIDC"
+                required: false
+
+jobs:
+    deploy:
+        name: Deploy APIGW Stack
+        runs-on: ubuntu-latest
+        permissions:
+            id-token: write # for OIDC
+            contents: read
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Configure AWS (OIDC role)
+              if: ${{ inputs.assume_role_arn != '' }}
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  role-to-assume: ${{ inputs.assume_role_arn }}
+                  aws-region: ${{ inputs.aws_region }}
+
+            - name: Configure AWS (static keys)
+              if: ${{ inputs.assume_role_arn == '' }}
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+                  aws-region: ${{ inputs.aws_region }}
+
+            - name: Verify AWS CLI
+              run: |
+                  aws --version
+
+            - name: Deploy CloudFormation stack
+              env:
+                  SERVICE_ENDPOINT: ${{ inputs.service_endpoint }}
+                  ENVIRONMENT_NAME: ${{ inputs.environment_name }}
+                  AWS_REGION: ${{ inputs.aws_region }}
+              run: |
+                  set -e
+                  aws cloudformation deploy \
+                      --stack-name claim-status-api-apigw \
+                      --template-file apigw/api-gateway-template.yaml \
+                      --parameter-overrides ServiceEndpoint="$SERVICE_ENDPOINT" EnvironmentName="$ENVIRONMENT_NAME" DeploymentVersion="${{ github.run_id }}" \
+                      --no-fail-on-empty-changeset
+
+            - id: outputs
+              name: Collect stack outputs
+              env:
+                  ENVIRONMENT_NAME: ${{ inputs.environment_name }}
+              run: |
+                  set -e
+                  API_ID=$(aws cloudformation describe-stacks --stack-name claim-status-api-apigw \
+                      --query "Stacks[0].Outputs[?OutputKey=='ApiId'].OutputValue" --output text)
+                  API_ENDPOINT=$(aws cloudformation describe-stacks --stack-name claim-status-api-apigw \
+                      --query "Stacks[0].Outputs[?OutputKey=='ApiEndpoint'].OutputValue" --output text)
+                  echo "api_id=$API_ID" >> "$GITHUB_OUTPUT"
+                  echo "api_endpoint=$API_ENDPOINT" >> "$GITHUB_OUTPUT"
+                  {
+                      echo "### API Gateway Deployment"
+                      echo "- Environment: $ENVIRONMENT_NAME"
+                      echo "- API ID: $API_ID"
+                      echo "- Public Endpoint: $API_ENDPOINT"
+                      echo
+                      echo "#### Quick Test"
+                      echo "\nGET:"
+                      echo "curl -sS \"$API_ENDPOINT/api/claims/CLAIM-001\""
+                      echo "\nPOST:"
+                      echo "curl -sS -X POST -H 'Content-Type: application/json' -d '{\"notesOverride\":\"Example override\"}' \"$API_ENDPOINT/api/claims/CLAIM-001/summarize\""
+                  } >> "$GITHUB_STEP_SUMMARY"
+
+        outputs:
+            api_id: ${{ steps.outputs.outputs.api_id }}
+            api_endpoint: ${{ steps.outputs.outputs.api_endpoint }}
