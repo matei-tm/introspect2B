@@ -4,8 +4,8 @@ on:
     workflow_dispatch:
         inputs:
             service_endpoint:
-                description: "NLB/ALB DNS name for claim-status-api (no scheme)"
-                required: true
+                description: "Optional: NLB/ALB DNS name for claim-status-api (no scheme). If omitted, it will be auto-discovered."
+                required: false
             environment_name:
                 description: "API Gateway stage name"
                 required: true
@@ -19,6 +19,21 @@ on:
                 description: "AWS region"
                 required: true
                 default: us-east-1
+            eks_cluster_name:
+                description: "Optional: EKS cluster name to query Service via kubectl"
+                required: false
+            k8s_namespace:
+                description: "Optional: Kubernetes namespace for the Service"
+                required: false
+                default: materclaims
+            k8s_service_name:
+                description: "Optional: Kubernetes Service name"
+                required: false
+                default: claim-status-api
+            lb_name:
+                description: "Optional: ELBv2 Load Balancer name (fallback if kubectl not used)"
+                required: false
+                default: claim-status-api
             assume_role_arn:
                 description: "Optional IAM Role ARN to assume via OIDC"
                 required: false
@@ -34,6 +49,44 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
+
+            - name: Discover Service Endpoint (kubectl/ELBv2)
+              env:
+                    AWS_REGION: ${{ inputs.aws_region }}
+              run: |
+                    set -e
+                    # If provided explicitly, use it
+                    if [ -n "${{ inputs.service_endpoint }}" ]; then
+                        echo "SERVICE_ENDPOINT=${{ inputs.service_endpoint }}" >> "$GITHUB_ENV"
+                        echo "Using provided service endpoint: ${{ inputs.service_endpoint }}"
+                        exit 0
+                    fi
+
+                    # Try kubectl if cluster name provided
+                    if [ -n "${{ inputs.eks_cluster_name }}" ]; then
+                        echo "Attempting kubectl discovery from EKS cluster: ${{ inputs.eks_cluster_name }}"
+                        aws eks update-kubeconfig --name "${{ inputs.eks_cluster_name }}" --region "$AWS_REGION"
+                        HOSTNAME=$(kubectl -n "${{ inputs.k8s_namespace }}" get svc "${{ inputs.k8s_service_name }}" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' || true)
+                        if [ -n "$HOSTNAME" ]; then
+                            echo "SERVICE_ENDPOINT=$HOSTNAME" >> "$GITHUB_ENV"
+                            echo "Discovered via kubectl: $HOSTNAME"
+                            exit 0
+                        else
+                            echo "kubectl discovery returned empty hostname; will try ELBv2 fallback."
+                        fi
+                    fi
+
+                    # Fallback: ELBv2 by name (requires aws-load-balancer-name annotation)
+                    echo "Attempting ELBv2 discovery for LB name: ${{ inputs.lb_name }}"
+                    HOSTNAME=$(aws elbv2 describe-load-balancers --names "${{ inputs.lb_name }}" --query 'LoadBalancers[0].DNSName' --output text 2>/dev/null || true)
+                    if [ -n "$HOSTNAME" ] && [ "$HOSTNAME" != "None" ]; then
+                        echo "SERVICE_ENDPOINT=$HOSTNAME" >> "$GITHUB_ENV"
+                        echo "Discovered via ELBv2: $HOSTNAME"
+                        exit 0
+                    fi
+
+                    echo "Failed to auto-discover Service endpoint. Provide inputs.service_endpoint or eks_cluster_name/k8s_* or lb_name."
+                    exit 1
 
             - name: Configure AWS (OIDC role)
               if: ${{ inputs.assume_role_arn != '' }}
@@ -57,7 +110,7 @@ jobs:
 
             - name: Deploy CloudFormation stack
               env:
-                  SERVICE_ENDPOINT: ${{ inputs.service_endpoint }}
+                  SERVICE_ENDPOINT: ${{ env.SERVICE_ENDPOINT }}
                   ENVIRONMENT_NAME: ${{ inputs.environment_name }}
                   AWS_REGION: ${{ inputs.aws_region }}
               run: |
