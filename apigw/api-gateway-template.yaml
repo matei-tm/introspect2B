@@ -134,12 +134,6 @@ Resources:
     Properties:
       RestApiId: !Ref ClaimStatusApi
       Description: !Sub "Deployment-${EnvironmentName}-${DeploymentVersion}"
-
-  ApiStage:
-    Type: AWS::ApiGateway::Stage
-    Properties:
-      RestApiId: !Ref ClaimStatusApi
-      DeploymentId: !Ref ApiDeployment
       StageName: !Ref EnvironmentName
 
   ApiKey:
