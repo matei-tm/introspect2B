@@ -443,7 +443,6 @@ docker-compose up -d
 curl http://localhost:8080/api/claims/CLM-2024-001
 ```
 
----
 
 ## 📈 Monitoring
 
@@ -493,7 +492,6 @@ fields @timestamp, @duration, statusCode, requestPath
 
 **Solutions:**
 ```bash
-# Check logs
 kubectl logs claim-status-api-xxxxx
 
 # Verify ECR image exists
@@ -502,7 +500,6 @@ aws ecr describe-images --repository-name claim-status-api
 # Check IRSA configuration
 kubectl describe sa app-service-account
 aws iam list-role-policies --role-name claim-status-api-role
-```
 
 ### Issue: DynamoDB access denied
 
@@ -513,11 +510,7 @@ aws iam list-role-policies --role-name claim-status-api-role
 # Verify table exists
 aws dynamodb describe-table --table-name claims
 
-# Check IAM policy
-aws iam get-role-policy --role-name claim-status-api-role \
-  --policy-name claim-status-api-policy
 
-# Verify service account annotation
 kubectl get sa app-service-account -o yaml | grep iam.amazonaws
 ```
 
