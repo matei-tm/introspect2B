@@ -1,5 +1,6 @@
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
+using Amazon.DynamoDBv2.Model;
 using ClaimStatusApi.Models;
 using Microsoft.Extensions.Logging;
 
@@ -22,24 +23,32 @@ public class DynamoDbService : IDynamoDbService
     {
         try
         {
-            var table = DynamoTableFactory.BuildTable(_dynamoDb, _tableName);
-            var document = await table.GetItemAsync(claimId);
+            var getReq = new GetItemRequest
+            {
+                TableName = _tableName,
+                Key = new Dictionary<string, AttributeValue>
+                {
+                    ["id"] = new AttributeValue { S = claimId }
+                }
+            };
 
-            if (document == null)
+            var getResp = await _dynamoDb.GetItemAsync(getReq);
+            if (getResp.Item == null || getResp.Item.Count == 0)
             {
                 _logger.LogWarning($"Claim {claimId} not found in DynamoDB");
                 return null;
             }
 
+            var item = getResp.Item;
             return new ClaimStatus
             {
-                Id = document["id"].AsString(),
-                Status = document["status"].AsString(),
-                ClaimType = document["claimType"].AsString(),
-                SubmissionDate = DateTime.Parse(document["submissionDate"].AsString()),
-                ClaimantName = document["claimantName"].AsString(),
-                Amount = decimal.Parse(document["amount"].AsString()),
-                NotesKey = document["notesKey"].AsString()
+                Id = item["id"].S,
+                Status = item.TryGetValue("status", out var status) ? status.S : string.Empty,
+                ClaimType = item.TryGetValue("claimType", out var ctype) ? ctype.S : string.Empty,
+                SubmissionDate = item.TryGetValue("submissionDate", out var sdate) ? DateTime.Parse(sdate.S) : DateTime.MinValue,
+                ClaimantName = item.TryGetValue("claimantName", out var cname) ? cname.S : string.Empty,
+                Amount = item.TryGetValue("amount", out var amount) ? decimal.Parse(amount.S) : 0m,
+                NotesKey = item.TryGetValue("notesKey", out var nkey) ? nkey.S : string.Empty
             };
         }
         catch (Exception ex)
@@ -53,19 +62,22 @@ public class DynamoDbService : IDynamoDbService
     {
         try
         {
-            var table = DynamoTableFactory.BuildTable(_dynamoDb, _tableName);
-            var document = new Document
+            var putReq = new PutItemRequest
             {
-                ["id"] = claimStatus.Id,
-                ["status"] = claimStatus.Status,
-                ["claimType"] = claimStatus.ClaimType,
-                ["submissionDate"] = claimStatus.SubmissionDate.ToUniversalTime().ToString("O"),
-                ["claimantName"] = claimStatus.ClaimantName,
-                ["amount"] = claimStatus.Amount.ToString(),
-                ["notesKey"] = claimStatus.NotesKey
+                TableName = _tableName,
+                Item = new Dictionary<string, AttributeValue>
+                {
+                    ["id"] = new AttributeValue { S = claimStatus.Id },
+                    ["status"] = new AttributeValue { S = claimStatus.Status },
+                    ["claimType"] = new AttributeValue { S = claimStatus.ClaimType },
+                    ["submissionDate"] = new AttributeValue { S = claimStatus.SubmissionDate.ToUniversalTime().ToString("O") },
+                    ["claimantName"] = new AttributeValue { S = claimStatus.ClaimantName },
+                    ["amount"] = new AttributeValue { S = claimStatus.Amount.ToString() },
+                    ["notesKey"] = new AttributeValue { S = claimStatus.NotesKey }
+                }
             };
 
-            await table.PutItemAsync(document);
+            await _dynamoDb.PutItemAsync(putReq);
             _logger.LogInformation($"Claim {claimStatus.Id} saved to DynamoDB");
         }
         catch (Exception ex)
@@ -73,42 +85,5 @@ public class DynamoDbService : IDynamoDbService
             _logger.LogError(ex, $"Error saving claim {claimStatus.Id} to DynamoDB");
             throw;
         }
-    }
-}
-
-internal static class DynamoTableFactory
-{
-    public static ITable BuildTable(IAmazonDynamoDB client, string tableName)
-    {
-#pragma warning disable CS0618
-        // Prefer TableBuilder if available; fallback to LoadTable to preserve behavior.
-        // New SDKs recommend using TableBuilder to construct Table with best-practice configuration.
-        try
-        {
-            var builderType = typeof(Table).Assembly.GetType("Amazon.DynamoDBv2.DocumentModel.TableBuilder");
-            if (builderType != null)
-            {
-                // Attempt to call: TableBuilder.Create(client, tableName).Build()
-                var createMethod = builderType.GetMethod("Create", new[] { typeof(IAmazonDynamoDB), typeof(string) });
-                if (createMethod != null)
-                {
-                    var builder = createMethod.Invoke(null, new object[] { client, tableName });
-                    var buildMethod = builderType.GetMethod("Build");
-                    if (buildMethod != null)
-                    {
-                        var table = (ITable?)buildMethod.Invoke(builder, Array.Empty<object>());
-                        if (table != null)
-                            return table;
-                    }
-                }
-            }
-        }
-        catch
-        {
-            // Ignore reflection issues and use legacy path
-        }
-
-        return Table.LoadTable(client, tableName);
-#pragma warning restore CS0618
     }
 }

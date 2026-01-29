@@ -1,0 +1,60 @@
+name: .NET Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'introspect2B.sln'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'introspect2B.sln'
+
+jobs:
+  test:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore introspect2B.sln
+
+      - name: Test with coverage
+        env:
+          DOTNET_CLI_TELEMETRY_OPTOUT: 1
+        run: |
+          set -euo pipefail
+          mkdir -p test-results
+          dotnet test introspect2B.sln -v minimal --collect:"XPlat Code Coverage" --results-directory test-results
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-test-results
+          path: test-results
+
+      - name: Summarize
+        if: always()
+        run: |
+          {
+            echo "### .NET Tests"
+            echo "- Solution: introspect2B.sln"
+            echo "- Coverage: see artifacts (XPlat Code Coverage)"
+            echo
+            echo "#### Re-run locally"
+            echo "dotnet restore introspect2B.sln"
+            echo "dotnet test introspect2B.sln -v minimal --collect:\"XPlat Code Coverage\" --results-directory test-results"
+          } >> "$GITHUB_STEP_SUMMARY"
