@@ -123,16 +123,16 @@ jobs:
                     echo "Failed to auto-discover Service endpoint. Provide inputs.service_endpoint or eks_cluster_name/k8s_* or lb_name."
                     exit 1
 
-                        - name: Deploy APIGW stack (resilient)
-                            env:
-                                    SERVICE_ENDPOINT: ${{ env.SERVICE_ENDPOINT }}
-                                    ENVIRONMENT_NAME: ${{ inputs.environment_name }}
-                                    AWS_REGION: ${{ inputs.aws_region }}
-                                    AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
-                                    DEPLOYMENT_VERSION: ${{ github.run_id }}
-                            run: |
-                                        set -euo pipefail
-                                        bash scripts/deploy-apigw.sh
+            - name: Deploy APIGW stack (resilient)
+              env:
+                        SERVICE_ENDPOINT: ${{ env.SERVICE_ENDPOINT }}
+                        ENVIRONMENT_NAME: ${{ inputs.environment_name }}
+                        AWS_REGION: ${{ inputs.aws_region }}
+                        AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
+                        DEPLOYMENT_VERSION: ${{ github.run_id }}
+              run: |
+                            set -euo pipefail
+                            bash scripts/deploy-apigw.sh
 
             - name: Print stack events on failure
               if: failure()
