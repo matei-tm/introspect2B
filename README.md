@@ -432,7 +432,7 @@ cd pipelines/codepipeline
 aws cloudformation deploy \
   --template-file pipeline.yaml \
   --stack-name claim-status-api-pipeline \
-  --parameter-overrides GitHubToken=ghp_xxx EKSClusterName=claim-status-api-eks \
+  --parameter-overrides GitHubToken=ghp_xxx EKSClusterName=materclaims-cluster \
   --capabilities CAPABILITY_IAM
 ```
 

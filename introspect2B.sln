@@ -6,7 +6,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "eks-dapr-microservices", "eks-dapr-microservices", "{518E2EB9-5B57-247A-268E-AFBA7E66139C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "claim-status-api", "src\eks-dapr-microservices\claim-status-api\claim-status-api.csproj", "{55503668-33A8-117C-5D48-941C297327C7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "claim-status-api", "src\claim-status-api\claim-status-api.csproj", "{55503668-33A8-117C-5D48-941C297327C7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

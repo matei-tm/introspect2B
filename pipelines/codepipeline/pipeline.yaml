@@ -5,7 +5,7 @@ Parameters:
   GitHubRepo:
     Type: String
     Description: GitHub repository name
-    Default: cursor-driven/cna/introspect2B
+    Default: matei-tm/introspect2B
   GitHubBranch:
     Type: String
     Default: main
@@ -19,6 +19,7 @@ Parameters:
   EKSClusterName:
     Type: String
     Description: EKS cluster name for deployment
+    Default: materclaims-cluster
 
 Resources:
   CodeBuildServiceRole:
