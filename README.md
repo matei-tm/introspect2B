@@ -7,10 +7,16 @@ A cloud-native microservice demonstrating enterprise-grade architecture patterns
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Quick Start](#quick-start)
+## 🔑 API Gateway API Key
+
+This API requires an API key (`ApiKeyRequired: true`). After deploying the API Gateway stack, retrieve and use the key as follows.
+
 - [API Reference](#api-reference)
+
 - [GenAI Integration](#genai-integration)
 - [Mock Data](#mock-data)
 - [Infrastructure](#infrastructure)
+
 - [Deployment](#deployment)
 - [Monitoring](#monitoring)
 - [Troubleshooting](#troubleshooting)
@@ -59,7 +65,6 @@ graph TD
    F --> I
    G --> J
 ```
-
 ### Component Responsibilities
 
 | Component | Purpose | AWS Service |

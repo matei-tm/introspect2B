@@ -1,4 +1,4 @@
-name: Deploy API Gateway
+name: 4. Deploy API Gateway
 
 on:
     workflow_dispatch:
