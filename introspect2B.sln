@@ -4,9 +4,9 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "eks-dapr-microservices", "eks-dapr-microservices", "{518E2EB9-5B57-247A-268E-AFBA7E66139C}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "claim-status-api", "src\claim-status-api\claim-status-api.csproj", "{55503668-33A8-117C-5D48-941C297327C7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "claim-status-api.Tests", "src\claim-status-api.Tests\claim-status-api.Tests.csproj", "{FA3653D3-48D1-32CB-6183-D0C6161F23CA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,13 +18,16 @@ Global
 		{55503668-33A8-117C-5D48-941C297327C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{55503668-33A8-117C-5D48-941C297327C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{55503668-33A8-117C-5D48-941C297327C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA3653D3-48D1-32CB-6183-D0C6161F23CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA3653D3-48D1-32CB-6183-D0C6161F23CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA3653D3-48D1-32CB-6183-D0C6161F23CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA3653D3-48D1-32CB-6183-D0C6161F23CA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{518E2EB9-5B57-247A-268E-AFBA7E66139C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
-		{55503668-33A8-117C-5D48-941C297327C7} = {518E2EB9-5B57-247A-268E-AFBA7E66139C}
+		{55503668-33A8-117C-5D48-941C297327C7} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {03C020B7-9A5A-474B-8ABC-360572AF3383}
