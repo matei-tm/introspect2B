@@ -151,21 +151,31 @@ jobs:
                       --query "Stacks[0].Outputs[?OutputKey=='ApiId'].OutputValue" --output text)
                   API_ENDPOINT=$(aws cloudformation describe-stacks --stack-name claim-status-api-apigw \
                       --query "Stacks[0].Outputs[?OutputKey=='ApiEndpoint'].OutputValue" --output text)
+                  API_KEY_ID=$(aws cloudformation describe-stacks --stack-name claim-status-api-apigw \
+                      --query "Stacks[0].Outputs[?OutputKey=='ApiKeyId'].OutputValue" --output text)
                   echo "api_id=$API_ID" >> "$GITHUB_OUTPUT"
                   echo "api_endpoint=$API_ENDPOINT" >> "$GITHUB_OUTPUT"
+                  echo "api_key_id=$API_KEY_ID" >> "$GITHUB_OUTPUT"
                   {
                       echo "### API Gateway Deployment"
                       echo "- Environment: $ENVIRONMENT_NAME"
                       echo "- API ID: $API_ID"
                       echo "- Public Endpoint: $API_ENDPOINT"
+                      echo "- API Key ID: $API_KEY_ID"
                       echo
                       echo "#### Quick Test"
                       echo "\nGET:"
                       echo "curl -sS \"$API_ENDPOINT/api/claims/CLAIM-001\""
                       echo "\nPOST:"
                       echo "curl -sS -X POST -H 'Content-Type: application/json' -d '{\"notesOverride\":\"Example override\"}' \"$API_ENDPOINT/api/claims/CLAIM-001/summarize\""
+                      echo
+                      echo "#### Retrieve API Key Value (secure)"
+                      echo "Use CLI to fetch the key value without exposing it in logs:"
+                      echo "API_KEY_VALUE=\$(aws apigateway get-api-key --api-key \"$API_KEY_ID\" --include-value --region ${{ inputs.aws_region }} | jq -r .value)"
+                      echo "curl -H 'x-api-key: $API_KEY_VALUE' \"$API_ENDPOINT/api/claims/CLAIM-001\""
                   } >> "$GITHUB_STEP_SUMMARY"
 
         outputs:
             api_id: ${{ steps.outputs.outputs.api_id }}
             api_endpoint: ${{ steps.outputs.outputs.api_endpoint }}
+            api_key_id: ${{ steps.outputs.outputs.api_key_id }}
