@@ -21,7 +21,7 @@ if [[ -z "${PARAM_OVERRIDES:-}" ]]; then
   : "${ENVIRONMENT_NAME:?ENVIRONMENT_NAME env required}"
   DEPLOYMENT_VERSION="${DEPLOYMENT_VERSION:-$(date +%s)}"
   # Note: leave unquoted expansion at deploy time to allow splitting into k=v pairs
-  PARAM_OVERRIDES="ServiceEndpoint=\"${SERVICE_ENDPOINT}\" EnvironmentName=\"${ENVIRONMENT_NAME}\" DeploymentVersion=\"${DEPLOYMENT_VERSION}\""
+  PARAM_OVERRIDES="ServiceEndpoint=${SERVICE_ENDPOINT} EnvironmentName=${ENVIRONMENT_NAME} DeploymentVersion=${DEPLOYMENT_VERSION}"
 fi
 
 echo "Deploying APIGW with SERVICE_ENDPOINT=${SERVICE_ENDPOINT:-N/A} ENVIRONMENT_NAME=${ENVIRONMENT_NAME:-N/A} REGION=${AWS_REGION}"
@@ -64,7 +64,7 @@ echo "Starting CloudFormation deploy..."
 aws cloudformation deploy \
   --stack-name "${STACK_NAME}" \
   --template-file "${TEMPLATE_FILE}" \
-  --parameter-overrides ${PARAM_OVERRIDES} \
+  --parameter-overrides "${PARAM_OVERRIDES}" \
   --no-fail-on-empty-changeset \
   --capabilities "${CAPABILITIES}" \
   --region "${AWS_REGION}"
