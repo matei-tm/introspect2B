@@ -55,4 +55,30 @@ public class S3ServiceTests
 
         s3Mock.Verify(s => s.PutObjectAsync(It.IsAny<PutObjectRequest>(), It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [TestMethod]
+    public async Task GetClaimNotesAsync_Throws_OnError()
+    {
+        var s3Mock = new Mock<IAmazonS3>();
+        s3Mock.Setup(s => s.GetObjectAsync(It.IsAny<GetObjectRequest>(), It.IsAny<CancellationToken>()))
+              .ThrowsAsync(new AmazonS3Exception("boom"));
+
+        var logger = Mock.Of<ILogger<S3Service>>();
+        var service = new S3Service(s3Mock.Object, logger);
+
+        await Assert.ThrowsExceptionAsync<AmazonS3Exception>(() => service.GetClaimNotesAsync("b", "k"));
+    }
+
+    [TestMethod]
+    public async Task SaveClaimNotesAsync_Throws_OnError()
+    {
+        var s3Mock = new Mock<IAmazonS3>();
+        s3Mock.Setup(s => s.PutObjectAsync(It.IsAny<PutObjectRequest>(), It.IsAny<CancellationToken>()))
+              .ThrowsAsync(new AmazonS3Exception("boom"));
+
+        var logger = Mock.Of<ILogger<S3Service>>();
+        var service = new S3Service(s3Mock.Object, logger);
+
+        await Assert.ThrowsExceptionAsync<AmazonS3Exception>(() => service.SaveClaimNotesAsync("b", "k", "c"));
+    }
 }

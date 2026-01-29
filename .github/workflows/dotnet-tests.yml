@@ -39,6 +39,27 @@ jobs:
           mkdir -p test-results
           dotnet test introspect2B.sln -v minimal --collect:"XPlat Code Coverage" --results-directory test-results
 
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      - name: Generate HTML coverage report
+        run: |
+          set -euo pipefail
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          mkdir -p test-results/coverage-html
+          # Find all cobertura files produced by XPlat Code Coverage
+          REPORTS=$(ls -1 test-results/**/coverage.cobertura.xml 2>/dev/null | paste -sd ';' -)
+          if [ -z "$REPORTS" ]; then
+            echo "No coverage.cobertura.xml files found under test-results" >&2
+            exit 1
+          fi
+          # Exclude generated and obj files to avoid missing-source issues from source generators
+          reportgenerator \
+            -reports:"$REPORTS" \
+            -targetdir:test-results/coverage-html \
+            -reporttypes:Html \
+            -filefilters:-*.generated.cs
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -52,9 +73,12 @@ jobs:
           {
             echo "### .NET Tests"
             echo "- Solution: introspect2B.sln"
-            echo "- Coverage: see artifacts (XPlat Code Coverage)"
+            echo "- Coverage: Cobertura XML + HTML (see artifacts)"
+            echo "- HTML Report: test-results/coverage-html/index.html"
             echo
             echo "#### Re-run locally"
             echo "dotnet restore introspect2B.sln"
             echo "dotnet test introspect2B.sln -v minimal --collect:\"XPlat Code Coverage\" --results-directory test-results"
+            echo "dotnet tool install -g dotnet-reportgenerator-globaltool"
+            echo "reportgenerator -reports:\"test-results/**/coverage.cobertura.xml\" -targetdir:test-results/coverage-html -reporttypes:Html"
           } >> "$GITHUB_STEP_SUMMARY"

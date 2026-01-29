@@ -129,6 +129,26 @@ public class ClaimsControllerTests
     }
 
     [TestMethod]
+    public async Task SummarizeClaim_EmptyOverride_FallsBackToS3()
+    {
+        var id = "C4";
+        var claim = new ClaimStatus { Id = id, NotesKey = "notes/key.txt" };
+        var s3Content = "fallback notes";
+        var request = new SummarizeRequest { NotesOverride = string.Empty };
+        var expectedSummary = new ClaimSummary { ClaimId = id, OverallSummary = "y" };
+
+        _dynamoMock.Setup(d => d.GetClaimStatusAsync(id)).ReturnsAsync(claim);
+        _s3Mock.Setup(s => s.GetClaimNotesAsync("claim-notes", claim.NotesKey)).ReturnsAsync(s3Content);
+        _bedrockMock.Setup(b => b.GenerateSummaryAsync(id, s3Content)).ReturnsAsync(expectedSummary);
+
+        var controller = new ClaimsController(_dynamoMock.Object, _s3Mock.Object, _bedrockMock.Object, _loggerMock.Object, _config);
+        var result = await controller.SummarizeClaim(id, request);
+
+        Assert.IsInstanceOfType(result.Result, typeof(OkObjectResult));
+        _s3Mock.Verify(s => s.GetClaimNotesAsync("claim-notes", claim.NotesKey), Times.Once);
+    }
+
+    [TestMethod]
     public async Task SummarizeClaim_Returns500_OnBedrockError()
     {
         var id = "C3";

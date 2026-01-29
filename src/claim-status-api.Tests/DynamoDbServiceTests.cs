@@ -73,6 +73,16 @@ public class DynamoDbServiceTests
         Assert.IsTrue(fakeClient.LastPutItemRequest.Item.ContainsKey("id"));
         Assert.AreEqual("X", fakeClient.LastPutItemRequest.Item["id"].S);
     }
+
+    [TestMethod]
+    public async Task GetClaimStatusAsync_ReturnsNull_WhenMissing()
+    {
+        var fakeClient = new FakeAmazonDynamoDbClient();
+        var service = new DynamoDbService(fakeClient, _logger, _config);
+
+        var result = await service.GetClaimStatusAsync("NOPE");
+        Assert.IsNull(result);
+    }
 }
 
 // Minimal fake client that overrides needed async methods used by DocumentModel.Table
