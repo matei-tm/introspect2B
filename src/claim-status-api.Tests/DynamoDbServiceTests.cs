@@ -78,6 +78,13 @@ public class DynamoDbServiceTests
 // Minimal fake client that overrides needed async methods used by DocumentModel.Table
 internal class FakeAmazonDynamoDbClient : Amazon.DynamoDBv2.AmazonDynamoDBClient
 {
+    public FakeAmazonDynamoDbClient() : base(new Amazon.DynamoDBv2.AmazonDynamoDBConfig
+    {
+        RegionEndpoint = Amazon.RegionEndpoint.USEast1
+    })
+    {
+    }
+
     private Dictionary<string, AttributeValue>? _seedItem;
 
     public Amazon.DynamoDBv2.Model.PutItemRequest? LastPutItemRequest { get; private set; }
