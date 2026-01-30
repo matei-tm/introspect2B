@@ -58,7 +58,7 @@ jobs:
             -reports:"$REPORTS" \
             -targetdir:test-results/coverage-html \
             -reporttypes:Html \
-            -filefilters:-*.generated.cs
+            "-filefilters:-*.generated.cs;-**/Program.*"
 
       - name: Upload test results
         if: always()
