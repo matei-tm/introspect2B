@@ -80,5 +80,5 @@ jobs:
             echo "dotnet restore introspect2B.sln"
             echo "dotnet test introspect2B.sln -v minimal --collect:\"XPlat Code Coverage\" --results-directory test-results"
             echo "dotnet tool install -g dotnet-reportgenerator-globaltool"
-            echo "reportgenerator -reports:\"test-results/**/coverage.cobertura.xml\" -targetdir:test-results/coverage-html -reporttypes:Html"
+            echo "reportgenerator -reports:\"test-results/**/coverage.cobertura.xml\" -targetdir:test-results/coverage-html -reporttypes:Html \"-filefilters:-*.generated.cs;-**/Program.*\""
           } >> "$GITHUB_STEP_SUMMARY"

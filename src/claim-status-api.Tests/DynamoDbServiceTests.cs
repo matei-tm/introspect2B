@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using ClaimStatusApi.Models;
 using ClaimStatusApi.Services;
@@ -82,6 +83,35 @@ public class DynamoDbServiceTests
 
         var result = await service.GetClaimStatusAsync("NOPE");
         Assert.IsNull(result);
+    }
+
+    [TestMethod]
+    public async Task GetClaimStatusAsync_Throws_OnGetError()
+    {
+        var clientMock = new Moq.Mock<IAmazonDynamoDB>();
+        clientMock.Setup(c => c.GetItemAsync(Moq.It.IsAny<GetItemRequest>(), Moq.It.IsAny<CancellationToken>()))
+                  .ThrowsAsync(new Exception("get failed"));
+
+        var service = new DynamoDbService(clientMock.Object, _logger, _config);
+        await Assert.ThrowsExceptionAsync<Exception>(() => service.GetClaimStatusAsync("X"));
+    }
+
+    [TestMethod]
+    public async Task SaveClaimStatusAsync_Throws_OnPutError()
+    {
+        var clientMock = new Moq.Mock<IAmazonDynamoDB>();
+        clientMock.Setup(c => c.PutItemAsync(Moq.It.IsAny<PutItemRequest>(), Moq.It.IsAny<CancellationToken>()))
+                  .ThrowsAsync(new Exception("put failed"));
+
+        var service = new DynamoDbService(clientMock.Object, _logger, _config);
+        var claim = new ClaimStatus
+        {
+            Id = "X", Status = "S", ClaimType = "T",
+            SubmissionDate = DateTime.UtcNow, ClaimantName = "N",
+            Amount = 1.0m, NotesKey = "k"
+        };
+
+        await Assert.ThrowsExceptionAsync<Exception>(() => service.SaveClaimStatusAsync(claim));
     }
 }
 

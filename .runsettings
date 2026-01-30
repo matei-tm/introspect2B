@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <!-- Where test results (including coverage) are written -->
+    <ResultsDirectory>test-results</ResultsDirectory>
+    <!-- Use all available cores; 0 lets the runner decide -->
+    <MaxCpuCount>0</MaxCpuCount>
+    <!-- Target framework used by tests -->
+    <TargetFrameworkVersion>net10.0</TargetFrameworkVersion>
+  </RunConfiguration>
+
+  <!-- Enable cross-platform code coverage with default filters -->
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <!-- Cobertura format to align with CI and ReportGenerator -->
+          <Format>cobertura</Format>
+          <!-- Exclude generated files, obj, and Program*.cs from coverage -->
+          <ExcludeByFile>**/obj/**;**/*.generated.cs;**/Program*.cs</ExcludeByFile>
+          <!-- Common attributes to exclude from coverage -->
+          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+          <!-- Keep default (false) to count multiple hits normally -->
+          <SingleHit>false</SingleHit>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+
+  <!-- MSTest-specific options -->
+  <MSTest>
+    <MapInconclusiveToFailed>false</MapInconclusiveToFailed>
+    <CaptureTraceOutput>true</CaptureTraceOutput>
+  </MSTest>
+</RunSettings>
