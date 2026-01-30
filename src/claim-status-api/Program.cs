@@ -3,6 +3,7 @@ using Amazon.S3;
 using Amazon.BedrockRuntime;
 using Amazon.Extensions.NETCore.Setup;
 using ClaimStatusApi.Services;
+using ClaimStatusApi.Interfaces;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);

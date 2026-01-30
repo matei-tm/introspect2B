@@ -1,4 +1,4 @@
-namespace ClaimStatusApi.Services;
+namespace ClaimStatusApi.Interfaces;
 
 public interface IS3Service
 {

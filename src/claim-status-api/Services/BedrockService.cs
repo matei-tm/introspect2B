@@ -1,6 +1,7 @@
 using Amazon.BedrockRuntime;
 using Amazon.BedrockRuntime.Model;
 using ClaimStatusApi.Models;
+using ClaimStatusApi.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;

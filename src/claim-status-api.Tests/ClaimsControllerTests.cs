@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClaimStatusApi.Controllers;
 using ClaimStatusApi.Models;
-using ClaimStatusApi.Services;
+using ClaimStatusApi.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;

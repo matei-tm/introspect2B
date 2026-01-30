@@ -1,6 +1,6 @@
 using ClaimStatusApi.Models;
 
-namespace ClaimStatusApi.Services;
+namespace ClaimStatusApi.Interfaces;
 
 public interface IDynamoDbService
 {

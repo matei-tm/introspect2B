@@ -2,6 +2,7 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
 using ClaimStatusApi.Models;
+using ClaimStatusApi.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace ClaimStatusApi.Services;

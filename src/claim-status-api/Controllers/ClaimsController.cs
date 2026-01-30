@@ -1,6 +1,6 @@
 using System.Net;
 using ClaimStatusApi.Models;
-using ClaimStatusApi.Services;
+using ClaimStatusApi.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClaimStatusApi.Controllers;

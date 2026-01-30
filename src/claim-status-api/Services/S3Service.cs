@@ -1,6 +1,7 @@
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Logging;
+using ClaimStatusApi.Interfaces;
 
 namespace ClaimStatusApi.Services;
 
