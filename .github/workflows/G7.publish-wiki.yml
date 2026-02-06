@@ -1,4 +1,4 @@
-name: 6. Publish Wiki
+name: 7. Publish Wiki
 
 on:
   workflow_dispatch:

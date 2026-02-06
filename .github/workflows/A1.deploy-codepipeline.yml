@@ -17,11 +17,11 @@ on:
         description: Optional CloudFormation parameter overrides (key=value ...)
         required: false
         type: string
-  push:
-    branches: [ "main" ]
-    paths:
-      - "pipelines/codepipeline/pipeline.yaml"
-      - ".github/workflows/A1.deploy-codepipeline.yml"
+  #push:
+    #branches: [ "main" ]
+    #paths:
+     # - "pipelines/codepipeline/pipeline.yaml"
+     # - ".github/workflows/A1.deploy-codepipeline.yml"
 
 permissions:
   id-token: write
