@@ -1,4 +1,4 @@
-name: A1.Deploy AWS CodePipeline
+name: A1. Deploy AWS CodePipeline
 
 on:
   workflow_dispatch:
@@ -40,6 +40,7 @@ jobs:
           DEFAULT_REGION: ${{ secrets.AWS_REGION }}
           DEFAULT_STACK: ${{ vars.CF_STACK_NAME }}
           DEFAULT_PARAMS: ${{ vars.CF_PARAMETER_OVERRIDES }}
+          GITHUB_PAT: ${{ secrets.CODEPIPELINE_GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           REGION="${{ github.event.inputs.aws_region }}"
@@ -48,6 +49,13 @@ jobs:
           REGION="${REGION:-${DEFAULT_REGION:-us-east-1}}"
           STACK="${STACK:-${DEFAULT_STACK:-introspect2b-codepipeline}}"
           PARAMS="${PARAMS:-${DEFAULT_PARAMS:-}}"
+          # Append OAuthToken from secret by default, if provided and not already present
+          if [[ -n "${GITHUB_PAT}" && "${PARAMS}" != *"OAuthToken="* ]]; then
+            if [[ -n "${PARAMS}" ]]; then
+              PARAMS+=" "
+            fi
+            PARAMS+="OAuthToken=${GITHUB_PAT}"
+          fi
           echo "region=$REGION" >> "$GITHUB_OUTPUT"
           echo "stack=$STACK" >> "$GITHUB_OUTPUT"
           echo "params=$PARAMS" >> "$GITHUB_OUTPUT"
@@ -79,7 +87,8 @@ jobs:
             # shellcheck disable=SC2206
             CMD+=(--parameter-overrides $PARAMS)
           fi
-          echo "Running: ${CMD[*]}"
+          # Avoid printing full command to reduce secret exposure in logs
+          echo "Running CloudFormation deploy for stack: $STACK_NAME"
           "${CMD[@]}"
 
       - name: Show stack outputs
