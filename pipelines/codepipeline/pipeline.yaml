@@ -154,21 +154,7 @@ Resources:
             Value: latest
       Source:
         Type: CODEPIPELINE
-        BuildSpec: |
-          version: 0.2
-          phases:
-            pre_build:
-              commands:
-                - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY
-                - REPOSITORY_URI=$REGISTRY/$REPOSITORY
-            build:
-              commands:
-                - docker build -t $REPOSITORY_URI:$IMAGE_TAG -t $REPOSITORY_URI:latest -f src/claim-status-api/Dockerfile .
-                - docker push $REPOSITORY_URI:$IMAGE_TAG
-                - docker push $REPOSITORY_URI:latest
-            post_build:
-              commands:
-                - echo "Docker image built and pushed: $REPOSITORY_URI:$IMAGE_TAG"
+        BuildSpec: pipelines/codebuild/buildspec-docker.yml
 
   CodePipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -222,7 +208,7 @@ Resources:
               Configuration:
                 ProjectName: !Ref UnitTestBuild
               InputArtifacts:
-                - Name: BuildOutput
+                - Name: SourceOutput
               OutputArtifacts:
                 - Name: TestOutput
 
@@ -235,7 +221,7 @@ Resources:
               Configuration:
                 ProjectName: !Ref SecurityScanBuild
               InputArtifacts:
-                - Name: BuildOutput
+                - Name: SourceOutput
               RunOrder: 2
 
         - Name: Deploy
