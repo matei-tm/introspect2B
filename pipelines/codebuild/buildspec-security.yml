@@ -3,6 +3,7 @@ version: 0.2
 env:
   variables:
     DOTNET_ROOT: /root/.dotnet
+    PATH: /root/.dotnet:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin
   paths:
     - /root/.dotnet
 
@@ -13,10 +14,8 @@ phases:
       - curl -sSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
       - chmod +x dotnet-install.sh
       - ./dotnet-install.sh --channel 10.0 --quality daily --install-dir /root/.dotnet
-      - echo 'export DOTNET_ROOT=/root/.dotnet' | sudo tee /etc/profile.d/dotnet.sh > /dev/null
-      - echo 'export PATH=/root/.dotnet:$PATH' | sudo tee -a /etc/profile.d/dotnet.sh > /dev/null
-      - source /etc/profile.d/dotnet.sh && ln -sf /root/.dotnet/dotnet /usr/local/bin/dotnet
-      - source /etc/profile.d/dotnet.sh && dotnet --info | head -n 20
+      - ln -sf /root/.dotnet/dotnet /usr/local/bin/dotnet
+      - dotnet --info | head -n 20
   pre_build:
     commands:
       - echo "Installing security scanning tools..."
