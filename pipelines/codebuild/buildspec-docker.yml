@@ -4,19 +4,19 @@ phases:
   pre_build:
     commands:
       - echo "Logging in to ECR..."
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY
-      - REPOSITORY_URI=$REGISTRY/$REPOSITORY
+      - "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY"
+      - "export REPOSITORY_URI=$REGISTRY/$REPOSITORY"
   build:
     commands:
       - echo "Building docker image..."
-      - docker build -t $REPOSITORY_URI:$IMAGE_TAG -t $REPOSITORY_URI:latest -f src/claim-status-api/Dockerfile .
+      - "docker build -t $REPOSITORY_URI:$IMAGE_TAG -t $REPOSITORY_URI:latest -f src/claim-status-api/Dockerfile ."
       - echo "Pushing docker image..."
-      - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - docker push $REPOSITORY_URI:latest
+      - "docker push $REPOSITORY_URI:$IMAGE_TAG"
+      - "docker push $REPOSITORY_URI:latest"
   post_build:
     commands:
       - echo "Docker image built and pushed: $REPOSITORY_URI:$IMAGE_TAG"
 
 artifacts:
   files:
-    - src/claim-status-api/k8s/**/*
+    - "src/claim-status-api/k8s/**/*"
