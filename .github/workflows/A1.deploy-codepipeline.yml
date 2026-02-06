@@ -49,12 +49,12 @@ jobs:
           REGION="${REGION:-${DEFAULT_REGION:-us-east-1}}"
           STACK="${STACK:-${DEFAULT_STACK:-introspect2b-codepipeline}}"
           PARAMS="${PARAMS:-${DEFAULT_PARAMS:-}}"
-          # Append OAuthToken from secret by default, if provided and not already present
-          if [[ -n "${GITHUB_PAT}" && "${PARAMS}" != *"OAuthToken="* ]]; then
+          # Append GitHubToken from secret by default, if provided and not already present
+          if [[ -n "${GITHUB_PAT}" && "${PARAMS}" != *"GitHubToken="* ]]; then
             if [[ -n "${PARAMS}" ]]; then
               PARAMS+=" "
             fi
-            PARAMS+="OAuthToken=${GITHUB_PAT}"
+            PARAMS+="GitHubToken=${GITHUB_PAT}"
           fi
           echo "region=$REGION" >> "$GITHUB_OUTPUT"
           echo "stack=$STACK" >> "$GITHUB_OUTPUT"
