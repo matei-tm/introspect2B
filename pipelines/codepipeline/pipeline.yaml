@@ -82,7 +82,6 @@ Resources:
   ArtifactBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub 'claim-status-api-artifacts-${AWS::AccountId}'
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -182,6 +181,7 @@ Resources:
                 Repo: !Select [1, !Split [/, !Ref GitHubRepo]]
                 Branch: !Ref GitHubBranch
                 OAuthToken: !Ref GitHubToken
+                PollForSourceChanges: true
               OutputArtifacts:
                 - Name: SourceOutput
 

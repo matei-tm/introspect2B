@@ -91,6 +91,18 @@ jobs:
           echo "Running CloudFormation deploy for stack: $STACK_NAME"
           "${CMD[@]}"
 
+      - name: Show CloudFormation failure events
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          STACK_NAME="${{ steps.resolve.outputs.stack }}"
+          echo "Deployment failed. Fetching CloudFormation events for: $STACK_NAME"
+          aws cloudformation describe-stack-events --stack-name "$STACK_NAME" --output table || true
+          echo "Current stack status:"
+          aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+            --query "[Stacks[0].StackStatus, Stacks[0].StackStatusReason]" --output text || true
+
       - name: Show stack outputs
         run: |
           aws cloudformation describe-stacks --stack-name "${{ steps.resolve.outputs.stack }}" \
