@@ -1,0 +1,71 @@
+name: Deploy AWS CodePipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        description: AWS region to deploy to
+        required: true
+        default: us-east-1
+        type: string
+      stack_name:
+        description: CloudFormation stack name
+        required: true
+        default: introspect2b-codepipeline
+        type: string
+      parameter_overrides:
+        description: Optional CloudFormation parameter overrides (key=value ...)
+        required: false
+        type: string
+  push:
+    branches: [ "main" ]
+    paths:
+      - "pipelines/codepipeline/pipeline.yaml"
+      - ".github/workflows/deploy-codepipeline.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy CodePipeline
+    runs-on: ubuntu-latest
+    env:
+      TEMPLATE_FILE: pipelines/codepipeline/pipeline.yaml
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ inputs.aws_region || secrets.AWS_REGION }}
+
+      - name: Validate CloudFormation template
+        run: |
+          aws cloudformation validate-template --template-body file://${{ env.TEMPLATE_FILE }}
+
+      - name: Deploy CloudFormation stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          STACK_NAME="${{ inputs.stack_name || vars.CF_STACK_NAME || 'introspect2b-codepipeline' }}"
+          PARAMS="${{ inputs.parameter_overrides || vars.CF_PARAMETER_OVERRIDES || '' }}"
+          CMD=(aws cloudformation deploy \
+            --stack-name "$STACK_NAME" \
+            --template-file "${{ env.TEMPLATE_FILE }}" \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --no-fail-on-empty-changeset)
+          if [[ -n "$PARAMS" ]]; then
+            # shellcheck disable=SC2206
+            CMD+=(--parameter-overrides $PARAMS)
+          fi
+          echo "Running: ${CMD[*]}"
+          "${CMD[@]}"
+
+      - name: Show stack outputs
+        run: |
+          aws cloudformation describe-stacks --stack-name "${{ inputs.stack_name || vars.CF_STACK_NAME || 'introspect2b-codepipeline' }}" \
+            --query "Stacks[0].Outputs" --output table || true
