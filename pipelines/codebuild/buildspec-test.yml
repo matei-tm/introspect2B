@@ -1,6 +1,19 @@
 version: 0.2
 
+env:
+  variables:
+    DOTNET_ROOT: /root/.dotnet
+  paths:
+    - /root/.dotnet
+
 phases:
+  install:
+    commands:
+      - echo "Installing .NET 10 SDK..."
+      - curl -sSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
+      - chmod +x dotnet-install.sh
+      - ./dotnet-install.sh --channel 10.0 --quality daily
+      - dotnet --info | head -n 20
   pre_build:
     commands:
       - echo "Installing test dependencies..."
