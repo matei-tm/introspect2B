@@ -50,6 +50,13 @@ Resources:
                   - s3:GetObject
                   - s3:PutObject
                 Resource: !Sub '${ArtifactBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - codebuild:CreateReportGroup
+                  - codebuild:UpdateReport
+                  - codebuild:BatchPutTestCases
+                  - codebuild:BatchPutCodeCoverages
+                Resource: !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/*'
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
