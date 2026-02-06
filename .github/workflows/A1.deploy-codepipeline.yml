@@ -11,7 +11,7 @@ on:
       stack_name:
         description: CloudFormation stack name
         required: true
-        default: introspect2b-codepipeline
+        default: introspect2b-codepipeline-v2
         type: string
       parameter_overrides:
         description: Optional CloudFormation parameter overrides (key=value ...)
