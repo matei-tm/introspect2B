@@ -98,6 +98,7 @@ Resources:
       Artifacts:
         Type: CODEPIPELINE
       Environment:
+        Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_MEDIUM
         Image: aws/codebuild/standard:7.0
         EnvironmentVariables:
@@ -117,6 +118,7 @@ Resources:
       Artifacts:
         Type: CODEPIPELINE
       Environment:
+        Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/standard:7.0
       Source:
@@ -131,6 +133,7 @@ Resources:
       Artifacts:
         Type: CODEPIPELINE
       Environment:
+        Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_MEDIUM
         Image: aws/codebuild/standard:7.0
         PrivilegedMode: true
