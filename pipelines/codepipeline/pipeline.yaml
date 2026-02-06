@@ -196,33 +196,6 @@ Resources:
               OutputArtifacts:
                 - Name: SourceOutput
 
-        - Name: Test
-          Actions:
-            - Name: UnitTest
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: '1'
-              Configuration:
-                ProjectName: !Ref UnitTestBuild
-              InputArtifacts:
-                - Name: SourceOutput
-              OutputArtifacts:
-                - Name: TestOutput
-
-            - Name: SecurityScan
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: '1'
-              Configuration:
-                ProjectName: !Ref SecurityScanBuild
-              InputArtifacts:
-                - Name: SourceOutput
-              RunOrder: 2
-
         - Name: Build
           Actions:
             - Name: DockerBuild
@@ -237,6 +210,33 @@ Resources:
                 - Name: SourceOutput
               OutputArtifacts:
                 - Name: BuildOutput
+
+        - Name: Test
+          Actions:
+            - Name: UnitTest
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref UnitTestBuild
+              InputArtifacts:
+                - Name: BuildOutput
+              OutputArtifacts:
+                - Name: TestOutput
+
+            - Name: SecurityScan
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref SecurityScanBuild
+              InputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 2
 
         - Name: Deploy
           Actions:
