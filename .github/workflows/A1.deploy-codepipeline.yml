@@ -21,7 +21,7 @@ on:
     branches: [ "main" ]
     paths:
       - "pipelines/codepipeline/pipeline.yaml"
-      - ".github/workflows/deploy-codepipeline.yml"
+      - ".github/workflows/A1.deploy-codepipeline.yml"
 
 permissions:
   id-token: write
@@ -37,11 +37,45 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Resolve inputs
+        id: resolve
+        shell: bash
+        env:
+          DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+          DEFAULT_STACK: ${{ vars.CF_STACK_NAME }}
+          DEFAULT_PARAMS: ${{ vars.CF_PARAMETER_OVERRIDES }}
+        run: |
+          set -euo pipefail
+          REGION="${{ github.event.inputs.aws_region }}"
+          STACK="${{ github.event.inputs.stack_name }}"
+          PARAMS="${{ github.event.inputs.parameter_overrides }}"
+          REGION="${REGION:-${DEFAULT_REGION:-us-east-1}}"
+          STACK="${STACK:-${DEFAULT_STACK:-introspect2b-codepipeline}}"
+          PARAMS="${PARAMS:-${DEFAULT_PARAMS:-}}"
+          echo "region=$REGION" >> "$GITHUB_OUTPUT"
+          echo "stack=$STACK" >> "$GITHUB_OUTPUT"
+          echo "params=$PARAMS" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials (OIDC role)
+        if: ${{ secrets.AWS_ROLE_TO_ASSUME != '' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ inputs.aws_region || secrets.AWS_REGION }}
+          aws-region: ${{ steps.resolve.outputs.region }}
+
+      - name: Configure AWS credentials (Access Keys)
+        if: ${{ secrets.AWS_ROLE_TO_ASSUME == '' && secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ steps.resolve.outputs.region }}
+
+      - name: Fail if no AWS credentials configured
+        if: ${{ secrets.AWS_ROLE_TO_ASSUME == '' && (secrets.AWS_ACCESS_KEY_ID == '' || secrets.AWS_SECRET_ACCESS_KEY == '') }}
+        run: |
+          echo "Missing AWS credentials. Set secret 'AWS_ROLE_TO_ASSUME' for OIDC or provide 'AWS_ACCESS_KEY_ID' + 'AWS_SECRET_ACCESS_KEY'." >&2
+          exit 1
 
       - name: Validate CloudFormation template
         run: |
@@ -51,8 +85,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          STACK_NAME="${{ inputs.stack_name || vars.CF_STACK_NAME || 'introspect2b-codepipeline' }}"
-          PARAMS="${{ inputs.parameter_overrides || vars.CF_PARAMETER_OVERRIDES || '' }}"
+          STACK_NAME="${{ steps.resolve.outputs.stack }}"
+          PARAMS="${{ steps.resolve.outputs.params }}"
           CMD=(aws cloudformation deploy \
             --stack-name "$STACK_NAME" \
             --template-file "${{ env.TEMPLATE_FILE }}" \
@@ -67,5 +101,5 @@ jobs:
 
       - name: Show stack outputs
         run: |
-          aws cloudformation describe-stacks --stack-name "${{ inputs.stack_name || vars.CF_STACK_NAME || 'introspect2b-codepipeline' }}" \
+          aws cloudformation describe-stacks --stack-name "${{ steps.resolve.outputs.stack }}" \
             --query "Stacks[0].Outputs" --output table || true
