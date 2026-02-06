@@ -4,8 +4,6 @@ env:
   variables:
     DOTNET_ROOT: /root/.dotnet
     PATH: /root/.dotnet:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin
-  paths:
-    - /root/.dotnet
 
 phases:
   install:
