@@ -20,6 +20,10 @@ Parameters:
     Type: String
     Description: EKS cluster name for deployment
     Default: materclaims-cluster
+  PerformanceTestUrl:
+    Type: String
+    Description: Base URL that performance tests will target
+    Default: https://example.com
 
 Resources:
   CodeBuildServiceRole:
@@ -223,6 +227,24 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: pipelines/codebuild/buildspec-docker.yml
 
+  PerformanceTestBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: claim-status-api-performance-test
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Image: aws/codebuild/standard:7.0
+        EnvironmentVariables:
+          - Name: BASE_URL
+            Value: !Ref PerformanceTestUrl
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: pipelines/codebuild/buildspec-perf.yml
+
   CodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
@@ -307,7 +329,20 @@ Resources:
                 Capabilities: CAPABILITY_AUTO_EXPAND
                 RoleArn: !GetAtt CloudFormationExecutionRole.Arn
               InputArtifacts:
-                - Name: BuildOutput
+                - Name: SourceOutput
+
+        - Name: PerformanceTest
+          Actions:
+            - Name: k6Tests
+              ActionTypeId:
+                Category: Test
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref PerformanceTestBuild
+              InputArtifacts:
+                - Name: SourceOutput
 
 Outputs:
   PipelineUrl:

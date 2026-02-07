@@ -1,0 +1,30 @@
+version: 0.2
+
+env:
+  variables:
+    SERVICE_DIR: src/claim-status-api.Performance.Tests
+
+phases:
+  install:
+    commands:
+      - echo "Installing k6..."
+      - curl -sL https://github.com/grafana/k6/releases/download/v0.49.0/k6-v0.49.0-linux-amd64.tar.gz -o k6.tgz
+      - tar -xzf k6.tgz
+      - mv k6-v0.49.0-linux-amd64/k6 /usr/local/bin/k6
+      - rm -rf k6.tgz k6-v0.49.0-linux-amd64
+  pre_build:
+    commands:
+      - test -n "$BASE_URL" || { echo "BASE_URL is required"; exit 1; }
+      - echo "Running tests against $BASE_URL"
+  build:
+    commands:
+      - cd "$SERVICE_DIR"
+      - k6 run performance-test.js --summary-export k6-summary.json
+  post_build:
+    commands:
+      - echo "Performance test summary:"
+      - cat k6-summary.json
+
+artifacts:
+  files:
+    - "$SERVICE_DIR/k6-summary.json"
