@@ -1,6 +1,6 @@
 # Security services: Inspector v2 and Security Hub
 resource "aws_inspector2_enabler" "account" {
-  account_ids    = ["self"]
+  account_ids    = [data.aws_caller_identity.current.account_id]
   resource_types = ["ECR", "EC2", "LAMBDA"]
 }
 
