@@ -92,6 +92,11 @@ Resources:
                   - cloudformation:DescribeStackEvents
                   - cloudformation:DescribeChangeSet
                   - cloudformation:ListChangeSets
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:DeleteChangeSet
+                  - cloudformation:GetTemplate
+                  - cloudformation:ValidateTemplate
                 Resource: '*'
               - Effect: Allow
                 Action:
