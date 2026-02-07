@@ -93,3 +93,9 @@ variable "attach_security_services_policy_to_current_user" {
   type        = bool
   default     = false
 }
+
+variable "codepipeline_stack_name" {
+  description = "Name of the CloudFormation stack containing the CodePipeline and CodeBuild roles"
+  type        = string
+  default     = "introspect2b-codepipeline-v2"
+}

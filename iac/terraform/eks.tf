@@ -75,10 +75,24 @@ module "eks" {
   }
 }
 
+# Data source to get CodeBuild role from CloudFormation stack
+data "aws_cloudformation_stack" "codepipeline" {
+  name = var.codepipeline_stack_name
+}
+
 # Create EKS access entry for current IAM user
 resource "aws_eks_access_entry" "admin_user" {
   cluster_name      = module.eks.cluster_name
   principal_arn     = data.aws_caller_identity.current.arn
+  type              = "STANDARD"
+  
+  depends_on = [module.eks]
+}
+
+# Create EKS access entry for CodeBuild service role
+resource "aws_eks_access_entry" "codebuild" {
+  cluster_name      = module.eks.cluster_name
+  principal_arn     = data.aws_cloudformation_stack.codepipeline.outputs["CodeBuildServiceRoleArn"]
   type              = "STANDARD"
   
   depends_on = [module.eks]
@@ -95,6 +109,19 @@ resource "aws_eks_access_policy_association" "admin_user_policy" {
   }
 
   depends_on = [aws_eks_access_entry.admin_user]
+}
+
+# Associate admin policy with CodeBuild role
+resource "aws_eks_access_policy_association" "codebuild_policy" {
+  cluster_name  = module.eks.cluster_name
+  principal_arn = data.aws_cloudformation_stack.codepipeline.outputs["CodeBuildServiceRoleArn"]
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+
+  depends_on = [aws_eks_access_entry.codebuild]
 }
 
 # Wait for access policy to propagate
