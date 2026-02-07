@@ -191,7 +191,7 @@ Resources:
               OutputArtifacts:
                 - Name: SourceOutput
 
-        - Name: Build Test Scan
+        - Name: BuildTestScan
           Actions:
             - Name: UnitTest
               ActionTypeId:
