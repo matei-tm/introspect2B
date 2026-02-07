@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Deploy Claim Status API workload to EKS using AWS::EKS::Manifest resources.
+Description: Deploy Claim Status API workload to EKS using Kubernetes manifests managed via CloudFormation registry type.
 
 Parameters:
   EKSClusterName:
@@ -16,10 +16,18 @@ Parameters:
     Description: Container image tag to deploy from ECR.
 
 Resources:
+  EksKubernetesType:
+    Type: AWS::CloudFormation::TypeActivation
+    Properties:
+      PublicTypeArn: !Sub 'arn:aws:cloudformation:${AWS::Region}::type/resource/AWSQS-EKS-KubernetesResource'
+      AutoUpdate: true
+
   ClaimStatusDeployment:
-    Type: AWS::EKS::Manifest
+    Type: AWSQS::EKS::KubernetesResource
+    DependsOn: EksKubernetesType
     Properties:
       ClusterName: !Ref EKSClusterName
+      Namespace: !Ref Namespace
       Manifest:
         - !Sub |
             apiVersion: apps/v1
@@ -130,9 +138,11 @@ Resources:
                             topologyKey: kubernetes.io/hostname
 
   ClaimStatusService:
-    Type: AWS::EKS::Manifest
+    Type: AWSQS::EKS::KubernetesResource
+    DependsOn: EksKubernetesType
     Properties:
       ClusterName: !Ref EKSClusterName
+      Namespace: !Ref Namespace
       Manifest:
         - !Sub |
             apiVersion: v1
