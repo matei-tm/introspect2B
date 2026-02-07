@@ -87,6 +87,38 @@ Resources:
                   - eks:ListClusters
                 Resource: '*'
 
+  CloudFormationExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+      Policies:
+        - PolicyName: CloudFormationDeployPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - eks:DescribeCluster
+                  - eks:ListClusters
+                  - eks:DescribeNodegroup
+                  - eks:ListNodegroups
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: cloudformation.amazonaws.com
+
   ArtifactBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -247,6 +279,7 @@ Resources:
                 ChangeSetName: claim-status-api-changeset
                 TemplatePath: BuildOutput::src/claim-status-api/k8s/claim-status-api-deployment.yaml
                 Capabilities: CAPABILITY_AUTO_EXPAND
+                RoleArn: !GetAtt CloudFormationExecutionRole.Arn
               InputArtifacts:
                 - Name: BuildOutput
 
