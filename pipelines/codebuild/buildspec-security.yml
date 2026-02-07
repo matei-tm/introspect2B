@@ -34,14 +34,14 @@ phases:
       - cyclonedx-dotnet publish/claim-status-api.dll --output-file sbom.xml || true
       
       - echo "Scanning container image layers..."
-      - echo "Image: $REGISTRY/$REPOSITORY:$IMAGE_TAG"
+      #- echo "Image: $REGISTRY/$REPOSITORY:$IMAGE_TAG"
       - echo "Checking for vulnerable dependencies in packages..."
 
   post_build:
     commands:
       - echo "Security scan completed"
-      - echo "Semgrep findings:" $(grep -c '"severity": "ERROR"' semgrep-results.json || echo "0")
-      - echo "Bandit findings:" $(grep -c '"severity": "HIGH"' bandit-results.json || echo "0")
+      #- echo "Semgrep findings:" $(grep -c '"severity": "ERROR"' semgrep-results.json || echo "0")
+      #- echo "Bandit findings:" $(grep -c '"severity": "HIGH"' bandit-results.json || echo "0")
 
 artifacts:
   files:
