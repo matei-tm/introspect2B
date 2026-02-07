@@ -24,9 +24,12 @@ phases:
     commands:
       - echo "Ensuring namespace $NAMESPACE exists..."
       - kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-      - echo "Substituting environment variables in manifests..."
+      - echo "Fetching AWS Account ID and preparing environment variables..."
+      - export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - export ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
-      - export AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID}"
+      - echo "AWS Account ID: $AWS_ACCOUNT_ID"
+      - echo "ECR Registry: $ECR_REGISTRY"
+      - echo "Substituting environment variables in manifests..."
       - envsubst < $SERVICE_DIR/k8s/service-account.yaml > serviceaccount-substituted.yaml
       - envsubst < $SERVICE_DIR/k8s/claim-status-api-deployment.yaml > deployment-substituted.yaml
       - envsubst < $SERVICE_DIR/k8s/claim-status-api-service.yaml > service-substituted.yaml
