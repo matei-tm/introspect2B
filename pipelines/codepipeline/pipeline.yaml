@@ -271,47 +271,61 @@ Resources:
               OutputArtifacts:
                 - Name: SourceOutput
 
-        - Name: BuildTestScan
-          Actions:
-            - Name: UnitTest
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: '1'
-              Configuration:
-                ProjectName: !Ref UnitTestBuild
-              InputArtifacts:
-                - Name: SourceOutput
-              OutputArtifacts:
-                - Name: TestOutput
+        # - Name: BuildTestScan
+        #   Actions:
+        #     - Name: UnitTest
+        #       ActionTypeId:
+        #         Category: Build
+        #         Owner: AWS
+        #         Provider: CodeBuild
+        #         Version: '1'
+        #       Configuration:
+        #         ProjectName: !Ref UnitTestBuild
+        #       InputArtifacts:
+        #         - Name: SourceOutput
+        #       OutputArtifacts:
+        #         - Name: TestOutput
 
-            - Name: SecurityScan
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: '1'
-              Configuration:
-                ProjectName: !Ref SecurityScanBuild
-              InputArtifacts:
-                - Name: SourceOutput
-              RunOrder: 2
+        #     - Name: SecurityScan
+        #       ActionTypeId:
+        #         Category: Build
+        #         Owner: AWS
+        #         Provider: CodeBuild
+        #         Version: '1'
+        #       Configuration:
+        #         ProjectName: !Ref SecurityScanBuild
+        #       InputArtifacts:
+        #         - Name: SourceOutput
+        #       RunOrder: 2
 
-        - Name: Docker
-          Actions:
-            - Name: DockerBuild
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: '1'
-              Configuration:
-                ProjectName: !Ref DockerBuild
-              InputArtifacts:
-                - Name: SourceOutput
-              OutputArtifacts:
-                - Name: BuildOutput
+        # - Name: Docker
+        #   Actions:
+        #     - Name: DockerBuild
+        #       ActionTypeId:
+        #   Category: Build
+        #   Owner: AWS
+        #   Provider: CodeBuild
+        #   Version: '1'
+        #       Configuration:
+        #   ProjectName: !Ref DockerBuild
+        #       InputArtifacts:
+        #   - Name: SourceOutput
+        #       OutputArtifacts:
+        #   - Name: BuildOutput
+        #       RunOrder: 3
+        #   Actions:
+        #     - Name: DockerBuild
+        #       ActionTypeId:
+        #         Category: Build
+        #         Owner: AWS
+        #         Provider: CodeBuild
+        #         Version: '1'
+        #       Configuration:
+        #         ProjectName: !Ref DockerBuild
+        #       InputArtifacts:
+        #         - Name: SourceOutput
+        #       OutputArtifacts:
+        #         - Name: BuildOutput
 
         - Name: Deploy
           Actions:
@@ -325,7 +339,7 @@ Resources:
                 ActionMode: CHANGE_SET_REPLACE
                 StackName: claim-status-api-stack
                 ChangeSetName: claim-status-api-changeset
-                TemplatePath: BuildOutput::iac/cloudformation/claim-status-api-stack.yaml
+                TemplatePath: SourceOutput::iac/cloudformation/claim-status-api-stack.yaml
                 Capabilities: CAPABILITY_AUTO_EXPAND
                 RoleArn: !GetAtt CloudFormationExecutionRole.Arn
               InputArtifacts:
