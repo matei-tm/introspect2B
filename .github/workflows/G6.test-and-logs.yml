@@ -64,15 +64,6 @@ jobs:
           kubectl logs -n ${{ env.NAMESPACE }} deployment/claims -c claims --tail=20 | tee -a $GITHUB_STEP_SUMMARY || echo "No logs available" | tee -a $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Collect order service logs
-        id: order-logs
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📝 Order Service Logs" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          kubectl logs -n ${{ env.NAMESPACE }} deployment/order -c order --tail=20 | tee -a $GITHUB_STEP_SUMMARY || echo "No logs available" | tee -a $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-
 
       - name: Collect CloudWatch agent logs
         id: cw-agent-logs
@@ -129,8 +120,7 @@ jobs:
             echo '```'
             echo ""
             
-         
-            
+                
             echo "## 📊 CloudWatch Agent Logs"
             echo '```'
             kubectl logs -n ${{ env.CLOUDWATCH_NAMESPACE }} daemonset/cloudwatch-agent --tail=50 || echo "CloudWatch agent logs not available"
