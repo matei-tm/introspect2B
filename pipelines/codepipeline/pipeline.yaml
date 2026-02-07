@@ -129,6 +129,13 @@ Resources:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/standard:7.0
+        EnvironmentVariables:
+          - Name: REGISTRY
+            Value: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com'
+          - Name: REPOSITORY
+            Value: !Ref ECRRepositoryName
+          - Name: IMAGE_TAG
+            Value: !Sub '${CODEBUILD_RESOLVED_SOURCE_VERSION}-${CODEBUILD_BUILD_ID}'
       Source:
         Type: CODEPIPELINE
         BuildSpec: pipelines/codebuild/buildspec-security.yml
@@ -151,7 +158,7 @@ Resources:
           - Name: REPOSITORY
             Value: !Ref ECRRepositoryName
           - Name: IMAGE_TAG
-            Value: latest
+            Value: !Sub '${CODEBUILD_RESOLVED_SOURCE_VERSION}-${CODEBUILD_BUILD_ID}'
           - Name: REPOSITORY_URI
             Value: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepositoryName}'
       Source:
