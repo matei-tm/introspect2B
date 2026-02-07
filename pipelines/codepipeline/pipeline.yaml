@@ -62,6 +62,11 @@ Resources:
                   - codebuild:BatchPutTestCases
                   - codebuild:BatchPutCodeCoverages
                 Resource: !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/*'
+              - Effect: Allow
+                Action:
+                  - eks:DescribeCluster
+                  - eks:ListClusters
+                Resource: '*'
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
@@ -245,6 +250,26 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: pipelines/codebuild/buildspec-perf.yml
 
+  DeployBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: claim-status-api-deploy
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:7.0
+        EnvironmentVariables:
+          - Name: CLUSTER_NAME
+            Value: !Ref EKSClusterName
+          - Name: NAMESPACE
+            Value: materclaims
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: pipelines/codebuild/buildspec-deploy.yml
+
   CodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
@@ -331,17 +356,12 @@ Resources:
           Actions:
             - Name: DeployToEKS
               ActionTypeId:
-                Category: Deploy
+                Category: Build
                 Owner: AWS
-                Provider: CloudFormation
+                Provider: CodeBuild
                 Version: '1'
               Configuration:
-                ActionMode: CHANGE_SET_REPLACE
-                StackName: claim-status-api-stack
-                ChangeSetName: claim-status-api-changeset
-                TemplatePath: SourceOutput::iac/cloudformation/claim-status-api-stack.yaml
-                Capabilities: CAPABILITY_AUTO_EXPAND
-                RoleArn: !GetAtt CloudFormationExecutionRole.Arn
+                ProjectName: !Ref DeployBuild
               InputArtifacts:
                 - Name: SourceOutput
 

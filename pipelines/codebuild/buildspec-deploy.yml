@@ -1,0 +1,38 @@
+version: 0.2
+
+env:
+  variables:
+    CLUSTER_NAME: materclaims-cluster
+    NAMESPACE: materclaims
+    SERVICE_DIR: src/claim-status-api
+
+phases:
+  install:
+    commands:
+      - echo "Installing kubectl..."
+      - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      - chmod +x kubectl
+      - mv kubectl /usr/local/bin/
+  pre_build:
+    commands:
+      - echo "Configuring kubectl for EKS cluster $CLUSTER_NAME..."
+      - aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $CLUSTER_NAME
+      - echo "Verifying cluster connection..."
+      - kubectl version --client
+      - kubectl get nodes
+  build:
+    commands:
+      - echo "Substituting environment variables in manifests..."
+      - export ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+      - export AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID}"
+      - envsubst < $SERVICE_DIR/k8s/claim-status-api-deployment.yaml > deployment-substituted.yaml
+      - envsubst < $SERVICE_DIR/k8s/claim-status-api-service.yaml > service-substituted.yaml
+      - echo "Applying Kubernetes manifests to namespace $NAMESPACE..."
+      - kubectl apply -f deployment-substituted.yaml
+      - kubectl apply -f service-substituted.yaml
+  post_build:
+    commands:
+      - echo "Deployment complete. Checking rollout status..."
+      - kubectl rollout status deployment/claim-status-api -n $NAMESPACE --timeout=5m
+      - echo "Getting service details..."
+      - kubectl get service claim-status-api -n $NAMESPACE
