@@ -110,6 +110,16 @@ Resources:
                   - eks:ListClusters
                   - eks:DescribeNodegroup
                   - eks:ListNodegroups
+                  - eks:DescribeAddon
+                  - eks:ListAddons
+                  - eks:DescribeAddonVersions
+                  - eks:DescribeFargateProfile
+                  - eks:ListFargateProfiles
+                  - eks:DescribeIdentityProviderConfig
+                  - eks:ListIdentityProviderConfigs
+                  - eks:DescribeUpdate
+                  - eks:ListUpdates
+                  - eks:AccessKubernetesApi
                 Resource: '*'
               - Effect: Allow
                 Action:
