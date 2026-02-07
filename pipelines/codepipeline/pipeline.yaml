@@ -152,6 +152,8 @@ Resources:
             Value: !Ref ECRRepositoryName
           - Name: IMAGE_TAG
             Value: latest
+          - Name: REPOSITORY_URI
+            Value: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepositoryName}'
       Source:
         Type: CODEPIPELINE
         BuildSpec: pipelines/codebuild/buildspec-docker.yml
