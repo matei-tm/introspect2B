@@ -38,7 +38,7 @@ phases:
       - cyclonedx-dotnet publish/claim-status-api.dll --output-file sbom.xml || true
       
       - echo "Scanning container image layers..."
-      - echo "Image: $REGISTRY/$REPOSITORY:$IMAGE_TAG"
+      - echo "Image:" '$REGISTRY/$REPOSITORY:$IMAGE_TAG'
       - echo "Checking for vulnerable dependencies in packages..."
 
   post_build:

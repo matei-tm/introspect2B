@@ -191,22 +191,7 @@ Resources:
               OutputArtifacts:
                 - Name: SourceOutput
 
-        - Name: Docker
-          Actions:
-            - Name: DockerBuild
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: '1'
-              Configuration:
-                ProjectName: !Ref DockerBuild
-              InputArtifacts:
-                - Name: SourceOutput
-              OutputArtifacts:
-                - Name: BuildOutput
-
-        - Name: Test
+        - Name: Build Test Scan
           Actions:
             - Name: UnitTest
               ActionTypeId:
@@ -233,7 +218,20 @@ Resources:
                 - Name: SourceOutput
               RunOrder: 2
 
-
+        - Name: Docker
+          Actions:
+            - Name: DockerBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref DockerBuild
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
 
         - Name: Deploy
           Actions:
