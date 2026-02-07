@@ -93,6 +93,10 @@ Resources:
                   - cloudformation:DescribeChangeSet
                   - cloudformation:ListChangeSets
                 Resource: '*'
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: !GetAtt CloudFormationExecutionRole.Arn
 
   CloudFormationExecutionRole:
     Type: AWS::IAM::Role
