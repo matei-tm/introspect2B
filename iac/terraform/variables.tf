@@ -87,3 +87,9 @@ variable "attach_ec2_policy_to_current_user" {
   type        = bool
   default     = true
 }
+
+variable "attach_security_services_policy_to_current_user" {
+  description = "Whether to attach Inspector/Security Hub permissions to the current IAM user"
+  type        = bool
+  default     = true
+}
