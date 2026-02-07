@@ -86,6 +86,13 @@ Resources:
                   - eks:DescribeCluster
                   - eks:ListClusters
                 Resource: '*'
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStacks
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:ListChangeSets
+                Resource: '*'
 
   CloudFormationExecutionRole:
     Type: AWS::IAM::Role
