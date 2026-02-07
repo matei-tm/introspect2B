@@ -135,7 +135,7 @@ Resources:
           - Name: REPOSITORY
             Value: !Ref ECRRepositoryName
           - Name: IMAGE_TAG
-            Value: !Sub '${CODEBUILD_RESOLVED_SOURCE_VERSION}-${CODEBUILD_BUILD_ID}'
+            Value: latest
       Source:
         Type: CODEPIPELINE
         BuildSpec: pipelines/codebuild/buildspec-security.yml
@@ -158,7 +158,7 @@ Resources:
           - Name: REPOSITORY
             Value: !Ref ECRRepositoryName
           - Name: IMAGE_TAG
-            Value: !Sub '${CODEBUILD_RESOLVED_SOURCE_VERSION}-${CODEBUILD_BUILD_ID}'
+            Value: latest
           - Name: REPOSITORY_URI
             Value: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepositoryName}'
       Source:
