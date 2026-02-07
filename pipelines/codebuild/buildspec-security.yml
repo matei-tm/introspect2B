@@ -17,7 +17,9 @@ phases:
   pre_build:
     commands:
       - echo "Installing security scanning tools..."
-      - pip install semgrep bandit
+      - python3 -m ensurepip --upgrade
+      - python3 -m pip install --upgrade pip
+      - python3 -m pip install semgrep bandit
       - echo "Installing SBOM generation tool..."
       - npm install -g @cyclonedx/bom
 
