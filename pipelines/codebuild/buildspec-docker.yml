@@ -14,7 +14,7 @@ phases:
       - docker push "$REPOSITORY_URI:latest"
   post_build:
     commands:
-      - echo "Docker image built and pushed: $REPOSITORY_URI:$IMAGE_TAG"
+      - echo "Docker image built and pushed:" $REPOSITORY_URI:$IMAGE_TAG
 
 artifacts:
   files:
