@@ -66,6 +66,13 @@ Resources:
                 Action:
                   - eks:DescribeCluster
                   - eks:ListClusters
+                  - eks:AccessKubernetesApi
+                  - eks:DescribeNodegroup
+                  - eks:ListNodegroups
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - sts:GetCallerIdentity
                 Resource: '*'
 
   CodePipelineServiceRole:
