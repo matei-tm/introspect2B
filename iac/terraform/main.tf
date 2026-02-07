@@ -1,6 +1,17 @@
 terraform {
   required_version = ">= 1.0"
   
+  # S3 backend for state management
+  # Run the "1. Setup Terraform Backend" GitHub Action first to create the S3 bucket and DynamoDB table
+  # Or run: ./backend-setup.sh us-east-1
+  backend "s3" {
+    bucket         = "introspect2b-terraform-state-322230759107"
+    key            = "terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "introspect2b-terraform-locks"
+    encrypt        = true
+  }
+  
   required_providers {
     aws = {
       source  = "hashicorp/aws"
