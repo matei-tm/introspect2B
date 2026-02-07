@@ -47,7 +47,7 @@ jobs:
           STACK="${{ github.event.inputs.stack_name }}"
           PARAMS="${{ github.event.inputs.parameter_overrides }}"
           REGION="${REGION:-${DEFAULT_REGION:-us-east-1}}"
-          STACK="${STACK:-${DEFAULT_STACK:-introspect2b-codepipeline}}"
+          STACK="${STACK:-${DEFAULT_STACK:-introspect2b-codepipeline-v2}}"
           PARAMS="${PARAMS:-${DEFAULT_PARAMS:-}}"
           # Append GitHubToken from secret by default, if provided and not already present
           if [[ -n "${GITHUB_PAT}" && "${PARAMS}" != *"GitHubToken="* ]]; then
