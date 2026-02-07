@@ -303,7 +303,7 @@ Resources:
                 ActionMode: CHANGE_SET_REPLACE
                 StackName: claim-status-api-stack
                 ChangeSetName: claim-status-api-changeset
-                TemplatePath: BuildOutput::src/claim-status-api/k8s/claim-status-api-deployment.yaml
+                TemplatePath: BuildOutput::iac/cloudformation/claim-status-api-stack.yaml
                 Capabilities: CAPABILITY_AUTO_EXPAND
                 RoleArn: !GetAtt CloudFormationExecutionRole.Arn
               InputArtifacts:
