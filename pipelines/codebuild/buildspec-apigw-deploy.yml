@@ -48,6 +48,15 @@ phases:
       - echo "Service endpoint:" $SERVICE_ENDPOINT
       - echo "Deploying API Gateway stack " $APIGW_STACK_NAME "(idempotent)..."
       - |
+        # Check if stack exists and is in ROLLBACK_COMPLETE state
+        STACK_STATUS=$(aws cloudformation describe-stacks --stack-name "$APIGW_STACK_NAME" --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+        if [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ]; then
+          echo "Stack is in ROLLBACK_COMPLETE state, deleting it first..."
+          aws cloudformation delete-stack --stack-name "$APIGW_STACK_NAME"
+          echo "Waiting for stack deletion to complete..."
+          aws cloudformation wait stack-delete-complete --stack-name "$APIGW_STACK_NAME"
+        fi
+      - |
         if [ -n "${CFN_EXEC_ROLE_ARN}" ]; then
           echo "Using specified CloudFormation execution role: ${CFN_EXEC_ROLE_ARN}"
           aws cloudformation deploy \
