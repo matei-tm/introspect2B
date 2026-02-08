@@ -45,8 +45,8 @@ phases:
           echo "Service endpoint not ready. Ensure the LoadBalancer is provisioned." >&2
           exit 1
         fi
-      - echo "Service endpoint: $SERVICE_ENDPOINT"
-      - echo "Deploying API Gateway stack $APIGW_STACK_NAME (idempotent)..."
+      - echo "Service endpoint:" $SERVICE_ENDPOINT
+      - echo "Deploying API Gateway stack " $APIGW_STACK_NAME "(idempotent)..."
       - |
         ROLE_ARG=""
         if [[ -n "$CFN_EXEC_ROLE_ARN" ]]; then

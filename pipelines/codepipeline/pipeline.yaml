@@ -424,7 +424,7 @@ Resources:
                 - Name: SourceOutput
               RunOrder: 2
 
-        - Name: Docker
+        - Name: DockerPushAndScan
           Actions:
             - Name: DockerBuild
               ActionTypeId:
@@ -452,9 +452,7 @@ Resources:
                 ProjectName: !Ref DeployBuild
               InputArtifacts:
                 - Name: SourceOutput
-
-        - Name: ApiGateway
-          Actions:
+              RunOrder: 1
             - Name: DeployApiGateway
               ActionTypeId:
                 Category: Build
@@ -465,6 +463,7 @@ Resources:
                 ProjectName: !Ref ApiGatewayDeployBuild
               InputArtifacts:
                 - Name: SourceOutput
+              RunOrder: 2
 
         - Name: IntegrationTest
           Actions:
