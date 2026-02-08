@@ -30,15 +30,11 @@ export default function () {
   sleep(1);
 
   // Test POST /api/claims/{claimId}/summarize
+  const postHeaders = Object.assign({}, headers, { 'Content-Type': 'application/json' });
   const postRes = http.post(
     `${baseUrl}/api/claims/CLAIM-001/summarize`,
     JSON.stringify({ notesOverride: 'Performance test override' }),
-    { 
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-    }
+    { headers: postHeaders }
   );
   check(postRes, {
     'POST status is 200': (r) => r.status === 200,
