@@ -1,0 +1,67 @@
+version: 0.2
+
+env:
+  variables:
+    CLUSTER_NAME: materclaims-cluster
+    NAMESPACE: materclaims
+    SERVICE_NAME: claim-status-api
+    APIGW_STACK_NAME: claim-status-api-apigw
+    ENVIRONMENT_NAME: dev
+    CFN_EXEC_ROLE_ARN: ""
+
+phases:
+  install:
+    commands:
+      - echo "Installing kubectl..."
+      - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      - chmod +x kubectl
+      - mv kubectl /usr/local/bin/
+  pre_build:
+    commands:
+      - echo "Configuring kubectl for EKS cluster $CLUSTER_NAME..."
+      - aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $CLUSTER_NAME
+      - echo "Verifying cluster connection..."
+      - kubectl version --client
+  build:
+    commands:
+      - echo "Resolving service endpoint for $SERVICE_NAME..."
+      - |
+        for i in $(seq 1 30); do
+          HOSTNAME=$(kubectl get svc "$SERVICE_NAME" -n "$NAMESPACE" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+          IPADDR=$(kubectl get svc "$SERVICE_NAME" -n "$NAMESPACE" -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+          if [[ -n "$HOSTNAME" ]]; then
+            SERVICE_ENDPOINT="$HOSTNAME"
+            break
+          fi
+          if [[ -n "$IPADDR" ]]; then
+            SERVICE_ENDPOINT="$IPADDR"
+            break
+          fi
+          echo "Waiting for LoadBalancer endpoint... ($i/30)"
+          sleep 10
+        done
+      - |
+        if [[ -z "${SERVICE_ENDPOINT:-}" ]]; then
+          echo "Service endpoint not ready. Ensure the LoadBalancer is provisioned." >&2
+          exit 1
+        fi
+      - echo "Service endpoint: $SERVICE_ENDPOINT"
+      - echo "Deploying API Gateway stack $APIGW_STACK_NAME (idempotent)..."
+      - |
+        ROLE_ARG=""
+        if [[ -n "$CFN_EXEC_ROLE_ARN" ]]; then
+          ROLE_ARG="--role-arn $CFN_EXEC_ROLE_ARN"
+        fi
+        aws cloudformation deploy \
+          --stack-name "$APIGW_STACK_NAME" \
+          --template-file apigw/api-gateway-template.yaml \
+          --parameter-overrides \
+            ServiceEndpoint="$SERVICE_ENDPOINT" \
+            EnvironmentName="$ENVIRONMENT_NAME" \
+            DeploymentVersion="${CODEBUILD_RESOLVED_SOURCE_VERSION:0:8}" \
+          --no-fail-on-empty-changeset \
+          $ROLE_ARG
+  post_build:
+    commands:
+      - echo "API Gateway deployment completed."
+      - aws cloudformation describe-stacks --stack-name "$APIGW_STACK_NAME" --query 'Stacks[0].Outputs' --output table
