@@ -172,8 +172,7 @@ Resources:
 Outputs:
   ApiEndpoint:
     Description: API Gateway endpoint URL
-    Value: !Sub |
-      https://${ClaimStatusApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}
+    Value: !Sub 'https://${ClaimStatusApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}'
     Export:
       Name: !Sub ClaimStatusApiEndpoint-${EnvironmentName}
 
