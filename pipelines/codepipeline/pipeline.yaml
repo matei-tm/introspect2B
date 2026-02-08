@@ -350,7 +350,7 @@ Resources:
                 Repo: !Select [1, !Split [/, !Ref GitHubRepo]]
                 Branch: !Ref GitHubBranch
                 OAuthToken: !Ref GitHubToken
-                PollForSourceChanges: true
+                PollForSourceChanges: false
               OutputArtifacts:
                 - Name: SourceOutput
 

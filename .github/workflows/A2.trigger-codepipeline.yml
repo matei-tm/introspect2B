@@ -1,0 +1,79 @@
+name: Auto-trigger CodePipeline on API Changes
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/claim-status-api/**'
+      - 'pipelines/codebuild/**'
+      - 'pipelines/codepipeline/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  trigger-pipeline:
+    name: Trigger CodePipeline
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      - name: Get pipeline name
+        id: pipeline
+        run: |
+          STACK_NAME="${{ vars.CF_STACK_NAME || 'introspect2b-codepipeline-v2' }}"
+          
+          # Get pipeline name from CloudFormation stack
+          PIPELINE_NAME=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --query 'Stacks[0].Outputs[?OutputKey==`PipelineUrl`].OutputValue' \
+            --output text | grep -oE '[^/]+$' || echo "claim-status-api-pipeline")
+          
+          echo "pipeline_name=$PIPELINE_NAME" >> $GITHUB_OUTPUT
+          echo "📦 Pipeline: $PIPELINE_NAME"
+
+      - name: Start pipeline execution
+        id: start
+        run: |
+          PIPELINE_NAME="${{ steps.pipeline.outputs.pipeline_name }}"
+          
+          # Start pipeline execution
+          EXECUTION_ID=$(aws codepipeline start-pipeline-execution \
+            --name "$PIPELINE_NAME" \
+            --query 'pipelineExecutionId' \
+            --output text)
+          
+          echo "execution_id=$EXECUTION_ID" >> $GITHUB_OUTPUT
+          echo "🚀 Started execution: $EXECUTION_ID"
+
+      - name: Generate summary
+        run: |
+          PIPELINE_NAME="${{ steps.pipeline.outputs.pipeline_name }}"
+          EXECUTION_ID="${{ steps.start.outputs.execution_id }}"
+          REGION="${{ secrets.AWS_REGION || 'us-east-1' }}"
+          
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## ✅ CodePipeline Triggered
+          
+          **Pipeline:** \`$PIPELINE_NAME\`  
+          **Execution ID:** \`$EXECUTION_ID\`  
+          **Trigger:** Push to \`main\` with changes in \`src/claim-status-api/**\`
+          
+          ### 🔗 Links
+          - [View Pipeline](https://console.aws.amazon.com/codesuite/codepipeline/pipelines/$PIPELINE_NAME/view?region=$REGION)
+          - [View Execution](https://console.aws.amazon.com/codesuite/codepipeline/pipelines/$PIPELINE_NAME/executions/$EXECUTION_ID?region=$REGION)
+          
+          ### 📝 Changed Files
+          \`\`\`
+          $(git diff --name-only HEAD~1 HEAD | grep -E '^(src/claim-status-api|pipelines)' || echo "No matching files")
+          \`\`\`
+          EOF
