@@ -84,6 +84,14 @@ Resources:
                   - s3:PutObject
                   - s3:GetObject
                 Resource: !Sub 'arn:aws:s3:::claim-notes-${AWS::AccountId}/*'
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStacks
+                Resource: !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/claim-status-api-apigw/*'
+              - Effect: Allow
+                Action:
+                  - apigateway:GET
+                Resource: !Sub 'arn:aws:apigateway:${AWS::Region}::/apikeys/*'
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
@@ -280,9 +288,6 @@ Resources:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_MEDIUM
         Image: aws/codebuild/standard:7.0
-        EnvironmentVariables:
-          - Name: BASE_URL
-            Value: !Ref PerformanceTestUrl
       Source:
         Type: CODEPIPELINE
         BuildSpec: pipelines/codebuild/buildspec-perf.yml

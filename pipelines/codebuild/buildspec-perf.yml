@@ -3,19 +3,47 @@ version: 0.2
 env:
   variables:
     SERVICE_DIR: src/claim-status-api.Performance.Tests
+    API_GATEWAY_STACK_NAME: claim-status-api-apigw
+    ENVIRONMENT_NAME: dev
 
 phases:
   install:
     commands:
-      - echo "Installing k6..."
+      - echo "Installing k6 and jq..."
       - curl -sL https://github.com/grafana/k6/releases/download/v0.49.0/k6-v0.49.0-linux-amd64.tar.gz -o k6.tgz
       - tar -xzf k6.tgz
       - mv k6-v0.49.0-linux-amd64/k6 /usr/local/bin/k6
       - rm -rf k6.tgz k6-v0.49.0-linux-amd64
+      - apt-get update && apt-get install -y jq
   pre_build:
     commands:
-      - test -n "$BASE_URL" || { echo "BASE_URL is required"; exit 1; }
-      - echo "Running tests against $BASE_URL"
+      - echo "Detecting API Gateway endpoint and API key..."
+      - |
+        # Get API Gateway endpoint and API Key ID from CloudFormation stack outputs
+        STACK_OUTPUTS=$(aws cloudformation describe-stacks \
+          --stack-name "${API_GATEWAY_STACK_NAME}" \
+          --region "${AWS_REGION}" \
+          --query "Stacks[0].Outputs" \
+          --output json)
+        
+        export BASE_URL=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="ApiEndpoint") | .OutputValue' | tr -d '\n')
+        API_KEY_ID=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="ApiKeyId") | .OutputValue')
+        
+        # Retrieve the actual API key value
+        export API_KEY=$(aws apigateway get-api-key \
+          --api-key "${API_KEY_ID}" \
+          --include-value \
+          --region "${AWS_REGION}" \
+          --query 'value' \
+          --output text)
+        
+        echo "API Gateway Endpoint: ${BASE_URL}"
+        echo "API Key ID: ${API_KEY_ID}"
+        echo "API Key retrieved (${#API_KEY} characters)"
+        
+        # Validate
+        test -n "$BASE_URL" || { echo "ERROR: Could not retrieve API Gateway endpoint"; exit 1; }
+        test -n "$API_KEY" || { echo "ERROR: Could not retrieve API key value"; exit 1; }
   build:
     commands:
       - cd "$SERVICE_DIR"
