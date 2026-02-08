@@ -176,7 +176,7 @@ Resources:
       - HealthMethod
     Properties:
       RestApiId: !Ref ClaimStatusApi
-      Description: !Sub "Deployment-${EnvironmentName}-${DeploymentVersion}"
+      Description: !Sub "Deployment-${EnvironmentName}-${DeploymentVersion}-${AWS::StackId}"
       StageName: !Ref EnvironmentName
 
   ApiKey:
