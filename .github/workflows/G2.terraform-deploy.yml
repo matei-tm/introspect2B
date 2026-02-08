@@ -70,7 +70,25 @@ jobs:
       - name: Terraform Plan
         id: plan
         if: github.event.inputs.action != 'destroy'
-        run: terraform plan -no-color -input=false
+        run: |
+          set +e
+          terraform plan -no-color -input=false -out=tfplan 2>&1 | tee plan.log
+          PLAN_EXIT_CODE=${PIPESTATUS[0]}
+          echo "exit_code=$PLAN_EXIT_CODE" >> $GITHUB_OUTPUT
+          
+          if [ $PLAN_EXIT_CODE -eq 0 ]; then
+            echo "✅ Plan succeeded with no changes"
+            exit 0
+          elif [ $PLAN_EXIT_CODE -eq 2 ]; then
+            echo "✅ Plan succeeded with changes"
+            exit 0
+          else
+            echo "❌ Plan failed with exit code $PLAN_EXIT_CODE"
+            echo ""
+            echo "=== Last 100 lines of plan output ==="
+            tail -100 plan.log
+            exit 1
+          fi
         continue-on-error: true
 
       - name: Terraform Plan (Destroy)
