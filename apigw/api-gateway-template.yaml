@@ -41,7 +41,7 @@ Resources:
     Type: AWS::ApiGateway::Resource
     Properties:
       RestApiId: !Ref ClaimStatusApi
-      ParentId: !Ref ClaimsResource
+      ParentId: !GetAtt ClaimStatusApi.RootResourceId
       PathPart: health
 
   ClaimsApiResource:
