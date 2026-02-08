@@ -16,6 +16,13 @@
       "Resource": "arn:aws:execute-api:*:*:*/*/POST/api/claims/*/summarize"
     },
     {
+      "Sid": "AllowHealthCheck",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "execute-api:Invoke",
+      "Resource": "arn:aws:execute-api:*:*:*/*/GET/health"
+    },
+    {
       "Sid": "DenyUnauthorizedMethods",
       "Effect": "Deny",
       "Principal": "*",
