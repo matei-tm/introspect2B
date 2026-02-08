@@ -48,26 +48,28 @@ phases:
       - echo "Service endpoint:" $SERVICE_ENDPOINT
       - echo "Deploying API Gateway stack " $APIGW_STACK_NAME "(idempotent)..."
       - |
-        if [ -n "$CFN_EXEC_ROLE_ARN" ]; then
+        'if [ -n "${CFN_EXEC_ROLE_ARN}" ]; then
+          echo "Using specified CloudFormation execution role: ${CFN_EXEC_ROLE_ARN}"
           aws cloudformation deploy \
-            --stack-name "$APIGW_STACK_NAME" \
+            --stack-name "${APIGW_STACK_NAME}" \
             --template-file apigw/api-gateway-template.yaml \
             --parameter-overrides \
-              ServiceEndpoint="$SERVICE_ENDPOINT" \
-              EnvironmentName="$ENVIRONMENT_NAME" \
+              ServiceEndpoint="${SERVICE_ENDPOINT}" \
+              EnvironmentName="${ENVIRONMENT_NAME}" \
               DeploymentVersion="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-8)" \
-            --role-arn "$CFN_EXEC_ROLE_ARN" \
+            --role-arn "${CFN_EXEC_ROLE_ARN}" \
             --no-fail-on-empty-changeset
         else
+          echo "No CFN execution role specified; using default permissions"
           aws cloudformation deploy \
-            --stack-name "$APIGW_STACK_NAME" \
+            --stack-name "${APIGW_STACK_NAME}" \
             --template-file apigw/api-gateway-template.yaml \
             --parameter-overrides \
-              ServiceEndpoint="$SERVICE_ENDPOINT" \
-              EnvironmentName="$ENVIRONMENT_NAME" \
+              ServiceEndpoint="${SERVICE_ENDPOINT}" \
+              EnvironmentName="${ENVIRONMENT_NAME}" \
               DeploymentVersion="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-8)" \
             --no-fail-on-empty-changeset
-        fi
+        fi'
   post_build:
     commands:
       - echo "API Gateway deployment completed."
