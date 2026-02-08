@@ -1,6 +1,7 @@
 # Claim Status API
 
 A GenAI-enabled Claim Status API built with .NET 8 that integrates with AWS services:
+
 - **DynamoDB** for claim status storage
 - **S3** for claim notes
 - **Amazon Bedrock** (Claude 3 Haiku) for AI-powered summaries
@@ -10,9 +11,11 @@ A GenAI-enabled Claim Status API built with .NET 8 that integrates with AWS serv
 ### Endpoints
 
 #### GET /api/claims/{id}
+
 Retrieves claim status information from DynamoDB.
 
 **Response (200 OK):**
+
 ```json
 {
   "id": "CLAIM-001",
@@ -26,9 +29,11 @@ Retrieves claim status information from DynamoDB.
 ```
 
 #### POST /api/claims/{id}/summarize
-Generates AI-powered summaries for a claim using Amazon Bedrock (Claude 3 Haiku).
+
+Generates AI-powered summaries for a claim using Amazon Bedrock (Nova).
 
 **Request Body (optional):**
+
 ```json
 {
   "notesOverride": "Custom claim notes text (optional)"
@@ -36,6 +41,7 @@ Generates AI-powered summaries for a claim using Amazon Bedrock (Claude 3 Haiku)
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "claimId": "CLAIM-001",
@@ -59,6 +65,7 @@ Generates AI-powered summaries for a claim using Amazon Bedrock (Claude 3 Haiku)
 ### AWS Permissions
 
 The service requires the following IAM permissions:
+
 - `dynamodb:GetItem`, `dynamodb:PutItem`, etc.
 - `s3:GetObject`, `s3:PutObject`, `s3:ListBucket`
 - `bedrock:InvokeModel`
@@ -66,6 +73,7 @@ The service requires the following IAM permissions:
 ## Configuration
 
 Environment variables:
+
 - `AWS_DEFAULT_REGION` - AWS region (default: us-east-1)
 - `AWS:DynamoDb:TableName` - DynamoDB table name (default: claims)
 - `AWS:S3:BucketName` - S3 bucket for claim notes (default: claim-notes)
@@ -134,6 +142,7 @@ kubectl port-forward -n materclaims svc/claim-status-api 8080:80
 ## Development
 
 ### Project Structure
+
 ```
 claim-status-api/
 ├── Controllers/

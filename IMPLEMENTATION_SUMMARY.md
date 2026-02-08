@@ -2,7 +2,7 @@
 
 ## ✅ Completed Implementation
 
-### API Service (.NET 8 WebAPI)
+### API Service (.NET 10 WebAPI)
 
 A production-ready GenAI-enabled claim management API with two core endpoints:
 
@@ -25,6 +25,7 @@ A production-ready GenAI-enabled claim management API with two core endpoints:
 ### Architecture Components
 
 #### Services Layer
+
 - **IDynamoDbService / DynamoDbService**
   - Claim status CRUD operations
   - Async/await patterns for scalability
@@ -42,6 +43,7 @@ A production-ready GenAI-enabled claim management API with two core endpoints:
   - Error handling
 
 #### Controllers
+
 - **ClaimsController**
   - RESTful endpoint implementations
   - Request/response validation
@@ -51,21 +53,25 @@ A production-ready GenAI-enabled claim management API with two core endpoints:
 ### AWS Integration
 
 #### DynamoDB
+
 - Table: `claims`
 - Billing: Pay-per-request
 - Items: Claim status documents
 
 #### S3
+
 - Bucket: `claim-notes-{account-id}`
 - Contents: Claim notes and documents
 - Security: Encryption at rest, public access blocking
 
 #### Amazon Bedrock
+
 - Model: `anthropic.claude-3-haiku-20240307-v1:0`
 - Region: us-east-1
 - Capability: Text generation for claim summaries
 
 #### IAM (IRSA)
+
 - Role: `AppServiceAccountRole`
 - Permissions:
   - DynamoDB: GetItem, PutItem, Query, Scan, etc.
@@ -75,6 +81,7 @@ A production-ready GenAI-enabled claim management API with two core endpoints:
 ### Kubernetes Deployment
 
 #### Deployment Configuration
+
 - **Replicas**: 2 (for high availability)
 - **Strategy**: Rolling update (maxSurge: 1, maxUnavailable: 0)
 - **Resources**:
@@ -82,17 +89,20 @@ A production-ready GenAI-enabled claim management API with two core endpoints:
   - Memory Request: 256Mi, Limit: 512Mi
 
 #### Health & Monitoring
+
 - **Liveness Probe**: HTTP GET `/health` (30s initial delay)
 - **Readiness Probe**: HTTP GET `/health` (10s initial delay)
 - **Pod Anti-Affinity**: Spread replicas across nodes
 
 #### Security
+
 - **Non-root User**: UID 1000
 - **Read-only Root Filesystem**: Except /tmp and /home
 - **Dropped Capabilities**: ALL
 - **IRSA**: ServiceAccount with IAM role mapping
 
 #### Service
+
 - **Type**: ClusterIP
 - **Port**: 80 (maps to container port 8080)
 - **Internal access only** (suitable for service-to-service calls)
@@ -126,6 +136,7 @@ claim-status-api/
 ### Terraform Infrastructure
 
 #### AWS Resources
+
 - **DynamoDB Table**: `aws_dynamodb_table.claims`
 - **S3 Bucket**: `aws_s3_bucket.claim_notes`
 - **S3 Public Access Block**: Prevents accidental public exposure
@@ -133,11 +144,13 @@ claim-status-api/
 - **S3 Encryption**: Server-side AES256
 
 #### IAM Configuration
+
 - **Policy**: Scoped permissions (DynamoDB, S3, Bedrock)
 - **Role**: IRSA setup for Kubernetes integration
 - **Trust Relationship**: Federated OIDC provider
 
 #### Kubernetes Configuration
+
 - **Namespace**: `materclaims`
 - **ServiceAccount**: `app-service-account`
 - **Role Annotation**: Maps to IAM role
@@ -145,6 +158,7 @@ claim-status-api/
 ### Scripts & Tooling
 
 #### Deployment
+
 - **`deploy-claim-status-api.sh`**
   - Builds Docker image
   - Pushes to ECR
@@ -152,12 +166,14 @@ claim-status-api/
   - Waits for rollout
 
 #### Testing
+
 - **`test-claim-status-api.sh`**
   - Shows test endpoints
   - Provides curl examples
   - Port-forward instructions
 
 #### Data Setup
+
 - **`init-sample-data.sh`**
   - Creates sample claim in DynamoDB
   - Uploads sample notes to S3
@@ -166,6 +182,7 @@ claim-status-api/
 ### Documentation
 
 #### README
+
 - Feature overview
 - API endpoint examples
 - Configuration details
@@ -176,6 +193,7 @@ claim-status-api/
 - Project structure
 
 #### DEPLOYMENT_GUIDE.md
+
 - Step-by-step deployment instructions
 - Prerequisites and requirements
 - Architecture diagram
@@ -187,30 +205,35 @@ claim-status-api/
 ## Key Features
 
 ✅ **Production-Ready Code**
+
 - Error handling and logging
 - Async/await patterns
 - Configuration management
 - Health checks
 
 ✅ **Cloud-Native**
+
 - Containerized with Docker
 - Kubernetes-ready
 - IRSA for secure AWS access
 - Non-root execution
 
 ✅ **Scalable Architecture**
+
 - Service layer abstraction
 - Dependency injection
 - No hardcoded credentials
 - Multi-replica deployment
 
 ✅ **AI-Powered**
+
 - Amazon Bedrock integration
 - Claude 3 Haiku model
 - Structured summary generation
 - Prompt engineering
 
 ✅ **Well-Documented**
+
 - Swagger/OpenAPI documentation
 - Inline code comments
 - README with examples
@@ -219,18 +242,21 @@ claim-status-api/
 ## Security Features
 
 🔐 **Container Security**
+
 - Non-root user execution
 - Read-only root filesystem
 - Dropped capabilities
 - Security context enforcement
 
 🔐 **AWS Security**
+
 - IAM least privilege (IRSA)
 - S3 encryption at rest
 - S3 public access blocking
 - DynamoDB fine-grained access
 
 🔐 **Network Security**
+
 - Service account isolation
 - Namespace separation
 - Pod anti-affinity for availability
@@ -238,23 +264,27 @@ claim-status-api/
 ## Next Steps
 
 1. **Deploy Infrastructure**
+
    ```bash
    cd iac/terraform
    terraform apply
    ```
 
 2. **Build & Push Image**
+
    ```bash
    cd src/eks-dapr-microservices
    ./scripts/deploy-claim-status-api.sh
    ```
 
 3. **Initialize Sample Data**
+
    ```bash
    ./scripts/init-sample-data.sh
    ```
 
 4. **Test the API**
+
    ```bash
    ./scripts/test-claim-status-api.sh
    ```
@@ -267,7 +297,7 @@ claim-status-api/
 
 | Component | Technology | Version |
 |-----------|-----------|---------|
-| Runtime | .NET | 8.0 |
+| Runtime | .NET | 10.0 |
 | Framework | ASP.NET Core | Latest |
 | Container | Docker | Latest |
 | Orchestration | Kubernetes | EKS |
@@ -301,12 +331,14 @@ claim-status-api/
 ## Monitoring & Observability
 
 ✅ **Implemented**
+
 - Health endpoint: `/health`
 - Structured logging (Serilog)
 - Kubernetes liveness/readiness probes
 - Pod resource tracking
 
 ✅ **Ready for Integration**
+
 - CloudWatch Logs compatible
 - Prometheus metrics ready
 - EKS Container Insights compatible

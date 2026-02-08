@@ -21,6 +21,7 @@ terraform apply -auto-approve
 ```
 
 **Creates:**
+
 - EKS cluster
 - DynamoDB table
 - S3 bucket
@@ -35,6 +36,7 @@ cd src/eks-dapr-microservices
 ```
 
 **Builds, pushes, and deploys:**
+
 - Docker image to ECR
 - Kubernetes deployment (2 replicas)
 - Service endpoint
@@ -46,6 +48,7 @@ cd src/eks-dapr-microservices
 ```
 
 **Creates sample data:**
+
 - Claim in DynamoDB
 - Notes in S3
 
@@ -60,11 +63,13 @@ kubectl port-forward -n materclaims svc/claim-status-api 8080:80 &
 ### Test Endpoints
 
 **Get Claim Status:**
+
 ```bash
 curl http://localhost:8080/api/claims/CLAIM-001
 ```
 
 **Generate AI Summary:**
+
 ```bash
 curl -X POST http://localhost:8080/api/claims/CLAIM-001/summarize \
   -H "Content-Type: application/json" \
@@ -72,6 +77,7 @@ curl -X POST http://localhost:8080/api/claims/CLAIM-001/summarize \
 ```
 
 **Swagger UI:**
+
 ```bash
 open http://localhost:8080/swagger
 ```
@@ -122,6 +128,7 @@ curl http://localhost:8080/api/claims/CLAIM-001
 ```
 
 Response:
+
 ```json
 {
   "id": "CLAIM-001",
@@ -141,6 +148,7 @@ curl -X POST http://localhost:8080/api/claims/CLAIM-001/summarize
 ```
 
 Response:
+
 ```json
 {
   "claimId": "CLAIM-001",
@@ -156,11 +164,13 @@ Response:
 ## Troubleshooting
 
 ### Pods not starting?
+
 ```bash
 kubectl describe pod <pod-name> -n materclaims
 ```
 
 ### API returning 404?
+
 ```bash
 # Check claim exists
 aws dynamodb get-item \
@@ -170,6 +180,7 @@ aws dynamodb get-item \
 ```
 
 ### S3 errors?
+
 ```bash
 # Check bucket exists
 aws s3 ls | grep claim-notes
@@ -194,6 +205,7 @@ Claim Status API (2 replicas)
 ## Support
 
 For detailed information, see:
+
 - [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Full deployment instructions
 - [IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md) - Architecture details
 - Service logs: `kubectl logs -n materclaims -l app=claim-status-api -f`
@@ -203,6 +215,7 @@ For detailed information, see:
 **Estimated Time:** 5 minutes ⏱️
 
 **Key Commands:**
+
 ```bash
 # Deploy
 ./scripts/deploy-claim-status-api.sh

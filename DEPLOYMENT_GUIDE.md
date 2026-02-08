@@ -48,6 +48,7 @@ terraform apply
 ```
 
 **What gets created:**
+
 - EKS Cluster with managed node groups
 - VPC and networking
 - DynamoDB table (`claims`)
@@ -276,6 +277,7 @@ terraform destroy
 ## Support
 
 For issues, errors, or questions:
+
 1. Check the logs: `kubectl logs -n materclaims -l app=claim-status-api -f`
 2. Review AWS service quotas
 3. Verify IAM permissions

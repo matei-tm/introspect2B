@@ -542,6 +542,7 @@ aws bedrock-runtime invoke-model \
 **Symptoms:** POST /api/claims/{id}/summarize takes >3 seconds
 
 **Root Causes & Solutions:**
+
 - **Bedrock throttling:** Increase concurrent requests capacity or add exponential backoff
 - **S3 latency:** Enable S3 Transfer Acceleration or use CloudFront
 - **DynamoDB latency:** Monitor consumed capacity; consider on-demand billing
