@@ -5,6 +5,7 @@ env:
     SERVICE_DIR: src/claim-status-api.Performance.Tests
     API_GATEWAY_STACK_NAME: claim-status-api-apigw
     ENVIRONMENT_NAME: dev
+    AWS_PAGER: ""
 
 phases:
   install:
@@ -25,7 +26,9 @@ phases:
           --stack-name "${API_GATEWAY_STACK_NAME}" \
           --region "${AWS_REGION}" \
           --query "Stacks[0].Outputs" \
-          --output json)
+          --output json \
+          --no-cli-pager \
+          --color off)
         
         echo "Stack outputs retrieved:"
         echo "$STACK_OUTPUTS" | jq .
@@ -47,7 +50,9 @@ phases:
           --include-value \
           --region "${AWS_REGION}" \
           --query 'value' \
-          --output text)
+          --output text \
+          --no-cli-pager \
+          --color off)
         
         echo "API Gateway Endpoint: ${BASE_URL}"
         echo "API Key ID: ${API_KEY_ID}"
