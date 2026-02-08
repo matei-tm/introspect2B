@@ -50,7 +50,7 @@ phases:
       - |
         ROLE_ARG=""
         if [ -n "$CFN_EXEC_ROLE_ARN" ]; then
-          ROLE_ARG="--role-arn $CFN_EXEC_ROLE_ARN"
+          ROLE_ARG="--role-arn \"$CFN_EXEC_ROLE_ARN\""
         fi
         aws cloudformation deploy \
           --stack-name "$APIGW_STACK_NAME" \
@@ -58,7 +58,7 @@ phases:
           --parameter-overrides \
             ServiceEndpoint="$SERVICE_ENDPOINT" \
             EnvironmentName="$ENVIRONMENT_NAME" \
-            DeploymentVersion="${CODEBUILD_RESOLVED_SOURCE_VERSION:0:8}" \
+            DeploymentVersion="$(echo "$CODEBUILD_RESOLVED_SOURCE_VERSION" | cut -c1-8)" \
           --no-fail-on-empty-changeset \
           $ROLE_ARG
   post_build:
