@@ -471,7 +471,7 @@ Resources:
                 - Name: SourceOutput
               RunOrder: 1
 
-        - Name: IntegrationTest
+        - Name: EnvIntegrationTest
           Actions:
             - Name: SeedData
               RunOrder: 1

@@ -37,6 +37,13 @@ Resources:
       ParentId: !GetAtt ClaimStatusApi.RootResourceId
       PathPart: api
 
+  HealthResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ClaimStatusApi
+      ParentId: !GetAtt ClaimStatusApi.RootResourceId
+      PathPart: health
+
   ClaimsApiResource:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -113,6 +120,23 @@ Resources:
         - StatusCode: 404
         - StatusCode: 500
 
+  HealthMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ClaimStatusApi
+      ResourceId: !Ref HealthResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      Integration:
+        Type: HTTP
+        IntegrationHttpMethod: GET
+        Uri: !Sub http://${ServiceEndpoint}/health
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+
   SummarizeRequestModel:
     Type: AWS::ApiGateway::Model
     Properties:
@@ -131,6 +155,7 @@ Resources:
     DependsOn:
       - GetClaimMethod
       - SummarizeClaimMethod
+      - HealthMethod
     Properties:
       RestApiId: !Ref ClaimStatusApi
       Description: !Sub "Deployment-${EnvironmentName}-${DeploymentVersion}"
