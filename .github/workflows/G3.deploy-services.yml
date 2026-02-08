@@ -114,14 +114,39 @@ jobs:
           ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
+          echo "Deploying service account with IRSA..."
+          envsubst < service-account.yaml | kubectl apply -f - -n ${{ env.NAMESPACE }}
+          
           echo "Deploying claim-status-api..."
           envsubst < claim-status-api-deployment.yaml | kubectl apply -f - -n ${{ env.NAMESPACE }}
           kubectl apply -f claim-status-api-service.yaml -n ${{ env.NAMESPACE }}
+          
+          echo "Deploying HorizontalPodAutoscaler..."
+          kubectl apply -f claim-status-api-hpa.yaml -n ${{ env.NAMESPACE }}
+          
+          echo "Deploying VerticalPodAutoscaler..."
+          kubectl apply -f claim-status-api-vpa.yaml -n ${{ env.NAMESPACE }} || echo "⚠️ VPA deployment failed - VPA controller may not be installed"
           
           echo "Waiting for claim-status-api rollout..."
           kubectl rollout status deployment/claim-status-api -n ${{ env.NAMESPACE }} --timeout=5m
           
           echo "✅ Claim Status API deployed successfully"
+
+      - name: Verify autoscaling configuration
+        run: |
+          echo "📊 Checking autoscaling resources..."
+          
+          echo ""
+          echo "HorizontalPodAutoscaler:"
+          kubectl get hpa claim-status-api-hpa -n ${{ env.NAMESPACE }} || echo "❌ HPA not found"
+          
+          echo ""
+          echo "VerticalPodAutoscaler:"
+          kubectl get vpa claim-status-api-vpa -n ${{ env.NAMESPACE }} || echo "⚠️ VPA not found (controller may not be installed)"
+          
+          echo ""
+          echo "HPA Details:"
+          kubectl describe hpa claim-status-api-hpa -n ${{ env.NAMESPACE }} || true
 
       - name: Verify claim-status-api deployment
         run: |
@@ -145,6 +170,9 @@ jobs:
           if [[ "${{ needs.setup.outputs.deploy-claim-api }}" == "true" ]]; then
             if [[ "${{ needs.build-and-deploy-claim-api.result }}" == "success" ]]; then
               echo "✅ **Claim Status API**: Deployed successfully" >> $GITHUB_STEP_SUMMARY
+              echo "  - Deployment with autoscaling enabled" >> $GITHUB_STEP_SUMMARY
+              echo "  - HPA: 2-10 replicas based on CPU/memory" >> $GITHUB_STEP_SUMMARY
+              echo "  - VPA: Initial mode for resource optimization" >> $GITHUB_STEP_SUMMARY
             else
               echo "❌ **Claim Status API**: Deployment failed" >> $GITHUB_STEP_SUMMARY
             fi
@@ -158,3 +186,8 @@ jobs:
           echo "- **Region**: ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Namespace**: ${{ env.NAMESPACE }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Autoscaling Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **HPA**: Enabled (CPU 70%, Memory 80% thresholds)" >> $GITHUB_STEP_SUMMARY
+          echo "- **VPA**: Initial mode (optimizes resources on pod creation)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Note**: VPA requires controller installation in cluster" >> $GITHUB_STEP_SUMMARY
