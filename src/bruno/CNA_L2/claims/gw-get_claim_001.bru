@@ -5,13 +5,9 @@ meta {
 }
 
 get {
-  url: https://{{apiendpoint}}.execute-api.us-east-1.amazonaws.com/dev/api/claims/CLAIM-001
+  url: {{base_url}}/api/claims/CLAIM-001
   body: none
   auth: inherit
-}
-
-headers {
-  x-api-key: {{apikey}}
 }
 
 vars:pre-request {

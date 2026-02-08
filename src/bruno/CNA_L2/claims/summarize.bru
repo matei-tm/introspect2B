@@ -1,11 +1,11 @@
 meta {
   name: summarize
   type: http
-  seq: 2
+  seq: 5
 }
 
 post {
-  url: http://localhost:8080/api/claims/CLAIM-001/summarize
+  url: {{base_url}}/api/claims/CLAIM-001/summarize
   body: none
   auth: inherit
 }

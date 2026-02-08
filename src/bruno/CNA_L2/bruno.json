@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "name": "CNA_L2",
+  "name": "smoke_test",
   "type": "collection",
   "ignore": [
     "node_modules",

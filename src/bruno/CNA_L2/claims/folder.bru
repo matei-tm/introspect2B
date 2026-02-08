@@ -1,0 +1,14 @@
+meta {
+  name: claims
+  seq: 2
+}
+
+auth {
+  mode: apikey
+}
+
+auth:apikey {
+  key: x-api-key
+  value: {{apikey}}
+  placement: header
+}
