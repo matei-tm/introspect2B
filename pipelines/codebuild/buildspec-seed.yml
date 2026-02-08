@@ -1,0 +1,28 @@
+version: 0.2
+
+# Buildspec for seeding sample data into DynamoDB and S3
+# This runs before performance tests to ensure test data exists
+# The script is idempotent - safe to run multiple times
+
+env:
+  variables:
+    AWS_DYNAMODB_TABLE: claims
+    CLAIM_ID: CLAIM-001
+
+phases:
+  pre_build:
+    commands:
+      - echo "Seeding sample data for performance tests..."
+      - echo "DynamoDB Table: ${AWS_DYNAMODB_TABLE}"
+      - echo "Claim ID: ${CLAIM_ID}"
+      - echo "S3 Bucket: claim-notes-$(aws sts get-caller-identity --query Account --output text)"
+      
+  build:
+    commands:
+      - chmod +x scripts/init-sample-data.sh
+      - ./scripts/init-sample-data.sh
+      
+  post_build:
+    commands:
+      - echo "✅ Sample data seeding completed"
+      - echo "Ready for performance testing"

@@ -74,6 +74,16 @@ Resources:
                 Action:
                   - sts:GetCallerIdentity
                 Resource: '*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:DescribeTable
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/claims'
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: !Sub 'arn:aws:s3:::claim-notes-${AWS::AccountId}/*'
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
@@ -239,6 +249,26 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: pipelines/codebuild/buildspec-docker.yml
 
+  SeedDataBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: claim-status-api-seed-data
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:7.0
+        EnvironmentVariables:
+          - Name: AWS_DYNAMODB_TABLE
+            Value: claims
+          - Name: CLAIM_ID
+            Value: CLAIM-001
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: pipelines/codebuild/buildspec-seed.yml
+
   PerformanceTestBuild:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -361,7 +391,19 @@ Resources:
 
         - Name: PerformanceTest
           Actions:
+            - Name: SeedData
+              RunOrder: 1
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref SeedDataBuild
+              InputArtifacts:
+                - Name: SourceOutput
             - Name: k6Tests
+              RunOrder: 2
               ActionTypeId:
                 Category: Test
                 Owner: AWS
