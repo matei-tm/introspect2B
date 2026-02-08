@@ -110,6 +110,13 @@ Resources:
                   - apigateway:GET
                 Resource:
                   - '*'
+              - Effect: Allow
+                Action:
+                  - inspector2:*
+                  - ecr:StartImageScan
+                  - ecr:DescribeImageScanFindings
+                  - ecr:GetAuthorizationToken
+                Resource: '*'
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
@@ -349,6 +356,28 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: pipelines/codebuild/buildspec-deploy.yml
 
+  InspectorScanBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: claim-status-api-inspector-scan
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:7.0
+        EnvironmentVariables:
+          - Name: REGISTRY
+            Value: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com'
+          - Name: REPOSITORY
+            Value: !Ref ECRRepositoryName
+          - Name: IMAGE_TAG
+            Value: latest
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: pipelines/codebuild/buildspec-inspector.yml
+
   ApiGatewayDeployBuild:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -444,6 +473,20 @@ Resources:
                 - Name: SourceOutput
               OutputArtifacts:
                 - Name: BuildOutput
+              RunOrder: 1
+            - Name: InspectorScan
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref InspectorScanBuild
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: ScanOutput
+              RunOrder: 2
 
 
         - Name: Deploy

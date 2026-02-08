@@ -1,0 +1,88 @@
+version: 0.2
+
+env:
+  variables:
+    IMAGE_TAG: latest
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY
+
+  build:
+    commands:
+      - echo Starting Amazon Inspector vulnerability scan for image $REGISTRY/$REPOSITORY:$IMAGE_TAG
+      - |
+        # Start the ECR image scan
+        echo "Starting image scan..."
+        aws ecr start-image-scan --repository-name $REPOSITORY --image-id imageTag=$IMAGE_TAG
+      - |
+        # Wait for scan to complete (max 5 minutes)
+        echo "Waiting for scan to complete..."
+        max_wait=300
+        wait_time=0
+        while [ $wait_time -lt $max_wait ]; do
+          scan_status=$(aws ecr describe-image-scan-findings --repository-name $REPOSITORY --image-id imageTag=$IMAGE_TAG --query 'imageScanStatus.status' --output text 2>/dev/null || echo "IN_PROGRESS")
+          if [ "$scan_status" = "COMPLETE" ]; then
+            echo "Scan completed successfully"
+            break
+          elif [ "$scan_status" = "FAILED" ]; then
+            echo "Scan failed"
+            exit 1
+          else
+            echo "Scan still in progress... waiting 10 seconds"
+            sleep 10
+            wait_time=$((wait_time + 10))
+          fi
+        done
+        
+        if [ $wait_time -ge $max_wait ]; then
+          echo "Scan timed out after 5 minutes"
+          exit 1
+        fi
+      - |
+        # Get scan results
+        echo "Retrieving scan results..."
+        aws ecr describe-image-scan-findings --repository-name $REPOSITORY --image-id imageTag=$IMAGE_TAG > scan-results.json
+      - |
+        # Parse and analyze findings
+        echo "Analyzing scan results..."
+        
+        # Extract counts by severity
+        critical_count=$(jq '.imageScanFindings.findingCounts.CRITICAL // 0' scan-results.json)
+        high_count=$(jq '.imageScanFindings.findingCounts.HIGH // 0' scan-results.json)
+        medium_count=$(jq '.imageScanFindings.findingCounts.MEDIUM // 0' scan-results.json)
+        low_count=$(jq '.imageScanFindings.findingCounts.LOW // 0' scan-results.json)
+        informational_count=$(jq '.imageScanFindings.findingCounts.INFORMATIONAL // 0' scan-results.json)
+        
+        echo "Vulnerability Summary:"
+        echo "  CRITICAL: ${critical_count}"
+        echo "  HIGH: ${high_count}"
+        echo "  MEDIUM: ${medium_count}"
+        echo "  LOW: ${low_count}"
+        echo "  INFORMATIONAL: ${informational_count}"
+        
+        # Fail on CRITICAL vulnerabilities
+        if [ $critical_count -gt 0 ]; then
+          echo "CRITICAL vulnerabilities found. Pipeline will fail."
+          echo "Please review and fix CRITICAL vulnerabilities before proceeding."
+          exit 1
+        fi
+        
+        # Warn on HIGH vulnerabilities but continue
+        if [ $high_count -gt 0 ]; then
+          echo "WARNING: HIGH severity vulnerabilities found."
+          echo "Consider reviewing and addressing these vulnerabilities."
+        fi
+        
+        echo "Vulnerability scan completed successfully"
+
+  post_build:
+    commands:
+      - echo Vulnerability scan completed at `date`
+
+artifacts:
+  files:
+    - scan-results.json
+  name: InspectorScanResults-$(date +%Y-%m-%d-%H-%M-%S)
