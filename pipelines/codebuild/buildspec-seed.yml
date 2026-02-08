@@ -13,9 +13,9 @@ phases:
   pre_build:
     commands:
       - echo "Seeding sample data for performance tests..."
-      - echo "DynamoDB Table: ${AWS_DYNAMODB_TABLE}"
-      - echo "Claim ID: ${CLAIM_ID}"
-      - echo "S3 Bucket: claim-notes-$(aws sts get-caller-identity --query Account --output text)"
+      - echo "DynamoDB Table:" ${AWS_DYNAMODB_TABLE}
+      - echo "Claim ID:" ${CLAIM_ID}
+      - echo "S3 Bucket:" claim-notes-$(aws sts get-caller-identity --query Account --output text)
       
   build:
     commands:
