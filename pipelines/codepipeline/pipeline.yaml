@@ -403,62 +403,62 @@ Resources:
               OutputArtifacts:
                 - Name: SourceOutput
 
-        # - Name: BuildTestScan
-        #   Actions:
-        #     - Name: UnitTest
-        #       ActionTypeId:
-        #         Category: Build
-        #         Owner: AWS
-        #         Provider: CodeBuild
-        #         Version: '1'
-        #       Configuration:
-        #         ProjectName: !Ref UnitTestBuild
-        #       InputArtifacts:
-        #         - Name: SourceOutput
-        #       OutputArtifacts:
-        #         - Name: TestOutput
+        - Name: BuildTestScan
+          Actions:
+            - Name: UnitTest
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref UnitTestBuild
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: TestOutput
 
-        #     - Name: SecurityScan
-        #       ActionTypeId:
-        #         Category: Build
-        #         Owner: AWS
-        #         Provider: CodeBuild
-        #         Version: '1'
-        #       Configuration:
-        #         ProjectName: !Ref SecurityScanBuild
-        #       InputArtifacts:
-        #         - Name: SourceOutput
-        #       RunOrder: 2
+            - Name: SecurityScan
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref SecurityScanBuild
+              InputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 2
 
-        # - Name: DockerPushAndScan
-        #   Actions:
-        #     - Name: DockerBuild
-        #       ActionTypeId:
-        #         Category: Build
-        #         Owner: AWS
-        #         Provider: CodeBuild
-        #         Version: '1'
-        #       Configuration:
-        #         ProjectName: !Ref DockerBuild
-        #       InputArtifacts:
-        #         - Name: SourceOutput
-        #       OutputArtifacts:
-        #         - Name: BuildOutput
+        - Name: DockerPushAndScan
+          Actions:
+            - Name: DockerBuildAndPush
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref DockerBuild
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
 
 
         - Name: Deploy
           Actions:
-            # - Name: DeployToEKS
-            #   ActionTypeId:
-            #     Category: Build
-            #     Owner: AWS
-            #     Provider: CodeBuild
-            #     Version: '1'
-            #   Configuration:
-            #     ProjectName: !Ref DeployBuild
-            #   InputArtifacts:
-            #     - Name: SourceOutput
-            #   RunOrder: 1
+            - Name: DeployToEKS
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref DeployBuild
+              InputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 1
             - Name: DeployApiGateway
               ActionTypeId:
                 Category: Build
@@ -469,7 +469,7 @@ Resources:
                 ProjectName: !Ref ApiGatewayDeployBuild
               InputArtifacts:
                 - Name: SourceOutput
-              RunOrder: 1
+              RunOrder: 2
 
         - Name: EnvIntegrationTest
           Actions:
