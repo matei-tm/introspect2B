@@ -1,0 +1,79 @@
+version: 0.2
+
+# Buildspec for integration testing - minimal k6 checks after seeding data
+# Validates API endpoints are functional before running full performance tests
+
+env:
+  variables:
+    SERVICE_DIR: src/claim-status-api.Performance.Tests
+    API_GATEWAY_STACK_NAME: claim-status-api-apigw
+    ENVIRONMENT_NAME: dev
+    AWS_PAGER: ""
+
+phases:
+  install:
+    commands:
+      - echo "Installing k6 and jq..."
+      - curl -sL https://github.com/grafana/k6/releases/download/v0.49.0/k6-v0.49.0-linux-amd64.tar.gz -o k6.tgz
+      - tar -xzf k6.tgz
+      - mv k6-v0.49.0-linux-amd64/k6 /usr/local/bin/k6
+      - rm -rf k6.tgz k6-v0.49.0-linux-amd64
+      - apt-get update && apt-get install -y jq
+  pre_build:
+    commands:
+      - echo "Detecting API Gateway endpoint and API key..."
+      - |
+        # Get API Gateway endpoint and API Key ID from CloudFormation stack outputs
+        echo "Querying CloudFormation stack:" ${API_GATEWAY_STACK_NAME} "in region:" ${AWS_REGION}
+        STACK_OUTPUTS=$(aws cloudformation describe-stacks \
+          --stack-name "${API_GATEWAY_STACK_NAME}" \
+          --region "${AWS_REGION}" \
+          --query "Stacks[0].Outputs" \
+          --output json \
+          --no-cli-pager \
+          --color off)
+        
+        echo "Stack outputs retrieved"
+        
+        export BASE_URL=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="ApiEndpoint") | .OutputValue' | tr -d '\n')
+        API_KEY_ID=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="ApiKeyId") | .OutputValue')
+        
+        echo "Parsed BASE_URL:" ${BASE_URL}
+        echo "Parsed API_KEY_ID:" ${API_KEY_ID}
+        
+        # Validate we got the outputs before trying to fetch API key
+        test -n "$BASE_URL" || { echo "ERROR: Could not retrieve API Gateway endpoint from stack outputs"; exit 1; }
+        test -n "$API_KEY_ID" || { echo "ERROR: Could not retrieve API Key ID from stack outputs"; exit 1; }
+        
+        # Retrieve the actual API key value
+        echo "Fetching API key value for:" ${API_KEY_ID}
+        export API_KEY=$(aws apigateway get-api-key \
+          --api-key "${API_KEY_ID}" \
+          --include-value \
+          --region "${AWS_REGION}" \
+          --query 'value' \
+          --output text \
+          --no-cli-pager \
+          --color off)
+        
+        echo "API Gateway Endpoint: ${BASE_URL}"
+        echo "API Key ID: ${API_KEY_ID}"
+        echo "API Key retrieved (${#API_KEY} characters)"
+        
+        # Final validation
+        test -n "$API_KEY" || { echo "ERROR: Could not retrieve API key value"; exit 1; }
+  build:
+    commands:
+      - echo "Running integration tests..."
+      - cd "$SERVICE_DIR"
+      - k6 run environment-integration-test.js --summary-export integration-summary.json
+  post_build:
+    commands:
+      - echo "Integration test summary:"
+      - cat integration-summary.json
+      - echo ""
+      - echo "✅ Integration tests completed - API endpoints validated"
+
+artifacts:
+  files:
+    - "$SERVICE_DIR/integration-summary.json"
