@@ -1,0 +1,29 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: claim-status-api-vpa
+  namespace: materclaims
+  labels:
+    app: claim-status-api
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: claim-status-api
+  updatePolicy:
+    updateMode: "Initial"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: claim-status-api
+      minAllowed:
+        cpu: 100m
+        memory: 256Mi
+      maxAllowed:
+        cpu: 2000m
+        memory: 2Gi
+      controlledResources:
+      - cpu
+      - memory
+      # Optimize for AI workload characteristics
+      # Allow higher memory bounds for Bedrock API processing
+      mode: Auto

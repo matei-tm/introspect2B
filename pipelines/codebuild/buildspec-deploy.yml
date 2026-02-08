@@ -43,10 +43,18 @@ phases:
       - kubectl apply -f serviceaccount-substituted.yaml
       - kubectl apply -f deployment-substituted.yaml
       - kubectl apply -f service-substituted.yaml
+      - echo "Applying HorizontalPodAutoscaler..."
+      - kubectl apply -f $SERVICE_DIR/k8s/claim-status-api-hpa.yaml
+      - echo "Applying VerticalPodAutoscaler..."
+      - kubectl apply -f $SERVICE_DIR/k8s/claim-status-api-vpa.yaml
   post_build:
     commands:
       - echo "Deployment complete. Checking pod status..."
       - kubectl get pods -n $NAMESPACE -l app=claim-status-api
+      - echo "Checking HPA status..."
+      - kubectl get hpa claim-status-api-hpa -n $NAMESPACE || echo "HPA not yet active"
+      - echo "Checking VPA status..."
+      - kubectl get vpa claim-status-api-vpa -n $NAMESPACE || echo "VPA not installed or not yet active"
       - echo "Checking deployment events..."
       - kubectl describe deployment claim-status-api -n $NAMESPACE
       - echo "Checking pod details..."
