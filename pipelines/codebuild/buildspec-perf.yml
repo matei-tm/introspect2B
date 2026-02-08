@@ -20,16 +20,28 @@ phases:
       - echo "Detecting API Gateway endpoint and API key..."
       - |
         # Get API Gateway endpoint and API Key ID from CloudFormation stack outputs
+        echo "Querying CloudFormation stack:" ${API_GATEWAY_STACK_NAME} "in region:" ${AWS_REGION}
         STACK_OUTPUTS=$(aws cloudformation describe-stacks \
           --stack-name "${API_GATEWAY_STACK_NAME}" \
           --region "${AWS_REGION}" \
           --query "Stacks[0].Outputs" \
           --output json)
         
+        echo "Stack outputs retrieved:"
+        echo "$STACK_OUTPUTS" | jq .
+        
         export BASE_URL=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="ApiEndpoint") | .OutputValue' | tr -d '\n')
         API_KEY_ID=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="ApiKeyId") | .OutputValue')
         
+        echo "Parsed BASE_URL:" ${BASE_URL}
+        echo "Parsed API_KEY_ID:" ${API_KEY_ID}
+        
+        # Validate we got the outputs before trying to fetch API key
+        test -n "$BASE_URL" || { echo "ERROR: Could not retrieve API Gateway endpoint from stack outputs"; exit 1; }
+        test -n "$API_KEY_ID" || { echo "ERROR: Could not retrieve API Key ID from stack outputs"; exit 1; }
+        
         # Retrieve the actual API key value
+        echo "Fetching API key value for:" ${API_KEY_ID}
         export API_KEY=$(aws apigateway get-api-key \
           --api-key "${API_KEY_ID}" \
           --include-value \
@@ -41,8 +53,7 @@ phases:
         echo "API Key ID: ${API_KEY_ID}"
         echo "API Key retrieved (${#API_KEY} characters)"
         
-        # Validate
-        test -n "$BASE_URL" || { echo "ERROR: Could not retrieve API Gateway endpoint"; exit 1; }
+        # Final validation
         test -n "$API_KEY" || { echo "ERROR: Could not retrieve API key value"; exit 1; }
   build:
     commands:
