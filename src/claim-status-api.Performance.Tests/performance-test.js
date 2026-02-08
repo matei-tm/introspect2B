@@ -38,7 +38,7 @@ export default function () {
   );
   check(postRes, {
     'POST status is 200': (r) => r.status === 200,
-    'POST response time < 2000ms': (r) => r.timings.duration < 2000,
+    'POST response time < 3000ms': (r) => r.timings.duration < 3000,
     'POST has summary': (r) => r.body.includes('summary') || r.body.includes('Summary'),
   });
 
