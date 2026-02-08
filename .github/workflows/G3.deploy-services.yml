@@ -125,7 +125,11 @@ jobs:
           kubectl apply -f claim-status-api-hpa.yaml -n ${{ env.NAMESPACE }}
           
           echo "Deploying VerticalPodAutoscaler..."
-          kubectl apply -f claim-status-api-vpa.yaml -n ${{ env.NAMESPACE }} || echo "⚠️ VPA deployment failed - VPA controller may not be installed"
+          if kubectl get crd verticalpodautoscalers.autoscaling.k8s.io >/dev/null 2>&1; then
+            kubectl apply -f claim-status-api-vpa.yaml -n ${{ env.NAMESPACE }}
+          else
+            echo "⚠️ VPA CRD not installed; skipping VPA apply"
+          fi
           
           echo "Waiting for claim-status-api rollout..."
           kubectl rollout status deployment/claim-status-api -n ${{ env.NAMESPACE }} --timeout=5m

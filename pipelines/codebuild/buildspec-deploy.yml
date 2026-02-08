@@ -46,7 +46,12 @@ phases:
       - echo "Applying HorizontalPodAutoscaler..."
       - kubectl apply -f $SERVICE_DIR/k8s/claim-status-api-hpa.yaml
       - echo "Applying VerticalPodAutoscaler..."
-      - kubectl apply -f $SERVICE_DIR/k8s/claim-status-api-vpa.yaml
+      - |
+        if kubectl get crd verticalpodautoscalers.autoscaling.k8s.io >/dev/null 2>&1; then
+          kubectl apply -f $SERVICE_DIR/k8s/claim-status-api-vpa.yaml
+        else
+          echo "VPA CRD not installed; skipping VPA apply"
+        fi
   post_build:
     commands:
       - echo "Deployment complete. Checking pod status..."
