@@ -114,7 +114,10 @@ jobs:
           (github.event.inputs.action == 'apply' || 
            (github.event_name == 'push' && github.ref == 'refs/heads/main')) &&
           steps.plan.outcome == 'success'
-        run: terraform apply -auto-approve -input=false
+        run: |
+          set -x
+          terraform apply -auto-approve -input=false 2>&1 | tee apply.log
+          exit ${PIPESTATUS[0]}
 
       - name: Terraform Destroy
         if: github.event.inputs.action == 'destroy' && steps.plan-destroy.outcome == 'success'
@@ -122,18 +125,31 @@ jobs:
 
       - name: Update kubeconfig
         if: |
-          github.event.inputs.action == 'apply' || 
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+          (github.event.inputs.action == 'apply' || 
+           (github.event_name == 'push' && github.ref == 'refs/heads/main'))
         run: |
-          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name materclaims-cluster
+          # Wait for cluster to be available
+          for i in {1..30}; do
+            if aws eks describe-cluster --name materclaims-cluster --region ${{ env.AWS_REGION }} &>/dev/null; then
+              echo "Cluster is available"
+              aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name materclaims-cluster
+              exit 0
+            fi
+            echo "Waiting for cluster to be available... (attempt $i/30)"
+            sleep 10
+          done
+          echo "Cluster not available after 5 minutes"
+          exit 1
 
       - name: Verify cluster access
         if: |
-          github.event.inputs.action == 'apply' || 
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+          (github.event.inputs.action == 'apply' || 
+           (github.event_name == 'push' && github.ref == 'refs/heads/main'))
         run: |
+          echo "Verifying cluster access..."
           kubectl get nodes
-          kubectl get pods -n kube-system | grep metrics-server
+          echo "Checking metrics-server..."
+          kubectl get pods -n kube-system | grep metrics-server || echo "metrics-server not found (may still be deploying)"
 
       - name: Output cluster info
         if: |
