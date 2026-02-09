@@ -11,7 +11,7 @@ phases:
       - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$REGISTRY"
       - echo "Generating unique image tag..."
       - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-      - export COMMIT_HASH=${CODEBUILD_RESOLVED_SOURCE_VERSION:0:8}
+      - export COMMIT_HASH=$(echo "$CODEBUILD_RESOLVED_SOURCE_VERSION" | cut -c1-8)
       - export IMAGE_TAG="${TIMESTAMP}-${COMMIT_HASH}"
       - echo "Generated IMAGE_TAG:" $IMAGE_TAG
       - echo "IMAGE_TAG=$IMAGE_TAG" > build-info.env
