@@ -56,9 +56,15 @@ phases:
           echo "Waiting for stack deletion to complete..."
           aws cloudformation wait stack-delete-complete --stack-name "$APIGW_STACK_NAME"
         fi
+      - echo "Deploying CloudFormation stack with proper role configuration..."
       - |
         if [ -n "${CFN_EXEC_ROLE_ARN}" ]; then
           echo "Using specified CloudFormation execution role: ${CFN_EXEC_ROLE_ARN}"
+        else
+          echo "No CFN execution role specified; using default permissions"
+        fi
+      - |
+        if [ -n "${CFN_EXEC_ROLE_ARN}" ]; then
           aws cloudformation deploy \
             --stack-name "${APIGW_STACK_NAME}" \
             --template-file apigw/api-gateway-template.yaml \
@@ -69,7 +75,6 @@ phases:
             --role-arn "${CFN_EXEC_ROLE_ARN}" \
             --no-fail-on-empty-changeset
         else
-          echo "No CFN execution role specified; using default permissions"
           aws cloudformation deploy \
             --stack-name "${APIGW_STACK_NAME}" \
             --template-file apigw/api-gateway-template.yaml \
