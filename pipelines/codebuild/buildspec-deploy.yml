@@ -23,7 +23,7 @@ phases:
   build:
     commands:
       - echo "Loading build information..."
-      - if [ -f build-info.env ]; then source build-info.env; else echo "build-info.env not found, using latest tag"; export IMAGE_TAG=latest; fi
+      - if [ -f "$CODEBUILD_SRC_DIR_ScanOutput/build-info.env" ]; then source "$CODEBUILD_SRC_DIR_ScanOutput/build-info.env"; elif [ -f "build-info.env" ]; then source build-info.env; else echo "build-info.env not found, using latest tag"; export IMAGE_TAG=latest; fi
       - echo "Using IMAGE_TAG:" $IMAGE_TAG
       - echo "Ensuring namespace $NAMESPACE exists..."
       - kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -

@@ -479,6 +479,7 @@ Resources:
               Configuration:
                 ProjectName: !Ref InspectorScanBuild
               InputArtifacts:
+                - Name: SourceOutput
                 - Name: BuildOutput
               OutputArtifacts:
                 - Name: ScanOutput
