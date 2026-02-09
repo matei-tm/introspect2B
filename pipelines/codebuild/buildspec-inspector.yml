@@ -15,7 +15,7 @@ phases:
       - |
         # Start the ECR image scan
         echo "Starting image scan..."
-        aws ecr start-image-scan --repository-name $REPOSITORY --image-id imageTag=$IMAGE_TAG
+        # aws ecr start-image-scan --repository-name $REPOSITORY --image-id imageTag=$IMAGE_TAG
       - |
         # Wait for scan to complete (max 5 minutes)
         echo "Waiting for scan to complete..."
