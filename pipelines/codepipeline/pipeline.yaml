@@ -278,8 +278,6 @@ Resources:
             Value: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com'
           - Name: REPOSITORY
             Value: !Ref ECRRepositoryName
-          - Name: IMAGE_TAG
-            Value: latest
           - Name: REPOSITORY_URI
             Value: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepositoryName}'
       Source:
@@ -372,8 +370,6 @@ Resources:
             Value: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com'
           - Name: REPOSITORY
             Value: !Ref ECRRepositoryName
-          - Name: IMAGE_TAG
-            Value: latest
       Source:
         Type: CODEPIPELINE
         BuildSpec: pipelines/codebuild/buildspec-inspector.yml
@@ -483,7 +479,7 @@ Resources:
               Configuration:
                 ProjectName: !Ref InspectorScanBuild
               InputArtifacts:
-                - Name: SourceOutput
+                - Name: BuildOutput
               OutputArtifacts:
                 - Name: ScanOutput
               RunOrder: 2
@@ -501,6 +497,7 @@ Resources:
                 ProjectName: !Ref DeployBuild
               InputArtifacts:
                 - Name: SourceOutput
+                - Name: ScanOutput
               RunOrder: 1
             - Name: DeployApiGateway
               ActionTypeId:

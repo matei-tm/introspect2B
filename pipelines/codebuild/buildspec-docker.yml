@@ -9,17 +9,26 @@ phases:
     commands:
       - echo "Logging in to ECR..."
       - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$REGISTRY"
+      - echo "Generating unique image tag..."
+      - export TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+      - export COMMIT_HASH=${CODEBUILD_RESOLVED_SOURCE_VERSION:0:8}
+      - export IMAGE_TAG="${TIMESTAMP}-${COMMIT_HASH}"
+      - echo "Generated IMAGE_TAG:" $IMAGE_TAG
+      - echo "IMAGE_TAG=$IMAGE_TAG" > build-info.env
+      - echo "REPOSITORY_URI=$REPOSITORY_URI" >> build-info.env
   build:
     commands:
-      - echo "Building docker image..."
+      - echo "Building docker image with tag:" $IMAGE_TAG
       - docker build -t "$REPOSITORY_URI:$IMAGE_TAG" -t "$REPOSITORY_URI:latest" -f "$SERVICE_DIR/Dockerfile" "$SERVICE_DIR"
       - echo "Pushing docker image..."
       - docker push "$REPOSITORY_URI:$IMAGE_TAG"
       - docker push "$REPOSITORY_URI:latest"
   post_build:
     commands:
-      - echo "Docker image built and pushed:" '$REPOSITORY_URI:$IMAGE_TAG'
+      - echo "Docker image built and pushed:" $REPOSITORY_URI:$IMAGE_TAG
+      - echo "Image tag information saved to build-info.env"
 
 artifacts:
   files:
     - "$SERVICE_DIR/k8s/**/*"
+    - build-info.env

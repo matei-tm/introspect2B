@@ -34,7 +34,7 @@ spec:
 
       containers:
       - name: claim-status-api
-        image: ${ECR_REGISTRY}/claim-status-api:latest
+        image: ${ECR_REGISTRY}/claim-status-api:${IMAGE_TAG}
         imagePullPolicy: Always
         
         ports:

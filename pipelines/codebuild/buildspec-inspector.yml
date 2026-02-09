@@ -1,12 +1,11 @@
 version: 0.2
 
-env:
-  variables:
-    IMAGE_TAG: latest
-
 phases:
   pre_build:
     commands:
+      - echo "Loading build information..."
+      - if [ -f build-info.env ]; then source build-info.env; else echo "build-info.env not found, using latest tag"; export IMAGE_TAG=latest; fi
+      - echo "Using IMAGE_TAG:" $IMAGE_TAG
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY
 
@@ -56,7 +55,7 @@ phases:
         low_count=$(jq '.imageScanFindings.findingCounts.LOW // 0' scan-results.json)
         informational_count=$(jq '.imageScanFindings.findingCounts.INFORMATIONAL // 0' scan-results.json)
         
-        echo "Vulnerability Summary:"
+        echo "Vulnerability Summary for tag $IMAGE_TAG:"
         echo "  CRITICAL: ${critical_count}"
         echo "  HIGH: ${high_count}"
         echo "  MEDIUM: ${medium_count}"
@@ -85,4 +84,5 @@ phases:
 artifacts:
   files:
     - scan-results.json
+    - build-info.env
   name: InspectorScanResults-$(date +%Y-%m-%d-%H-%M-%S)
