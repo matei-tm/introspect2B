@@ -81,7 +81,7 @@ phases:
     commands:
       - echo Vulnerability scan completed at `date`
       - echo "Copying build info for next stage..."
-      - cp "$CODEBUILD_SRC_DIR_BuildOutput/build-info.env" ./build-info.env || echo "Warning: Could not copy build-info.env"
+      - cp "${CODEBUILD_SRC_DIR_BuildOutput}/build-info.env" ./build-info.env || echo "Warning Could not copy build-info.env"
 
 artifacts:
   files:
