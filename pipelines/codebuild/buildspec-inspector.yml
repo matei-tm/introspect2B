@@ -14,8 +14,7 @@ phases:
       - echo Starting Amazon Inspector vulnerability scan for image $REGISTRY/$REPOSITORY:$IMAGE_TAG
       - |
         # Start the ECR image scan
-        echo "Starting image scan..."
-        # aws ecr start-image-scan --repository-name $REPOSITORY --image-id imageTag=$IMAGE_TAG
+        echo "Starting image scan is automatic..."
       - |
         # Wait for scan to complete (max 5 minutes)
         echo "Waiting for scan to complete..."
