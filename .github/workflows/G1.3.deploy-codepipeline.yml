@@ -13,6 +13,11 @@ on:
         required: true
         default: introspect2b-codepipeline-v2
         type: string
+      perf_stack_name:
+        description: CloudFormation stack name for the performance pipeline
+        required: true
+        default: introspect2b-codepipeline-perf
+        type: string
       parameter_overrides:
         description: Optional CloudFormation parameter overrides (key=value ...)
         required: false
@@ -29,6 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TEMPLATE_FILE: pipelines/codepipeline/pipeline.yaml
+      PERF_TEMPLATE_FILE: pipelines/codepipeline/pipeline-performance.yaml
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,15 +45,18 @@ jobs:
         env:
           DEFAULT_REGION: ${{ secrets.AWS_REGION }}
           DEFAULT_STACK: ${{ vars.CF_STACK_NAME }}
+          DEFAULT_PERF_STACK: ${{ vars.CF_PERF_STACK_NAME }}
           DEFAULT_PARAMS: ${{ vars.CF_PARAMETER_OVERRIDES }}
           GITHUB_PAT: ${{ secrets.CODEPIPELINE_GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           REGION="${{ github.event.inputs.aws_region }}"
           STACK="${{ github.event.inputs.stack_name }}"
+          PERF_STACK="${{ github.event.inputs.perf_stack_name }}"
           PARAMS="${{ github.event.inputs.parameter_overrides }}"
           REGION="${REGION:-${DEFAULT_REGION:-us-east-1}}"
           STACK="${STACK:-${DEFAULT_STACK:-introspect2b-codepipeline-v2}}"
+          PERF_STACK="${PERF_STACK:-${DEFAULT_PERF_STACK:-introspect2b-codepipeline-perf}}"
           PARAMS="${PARAMS:-${DEFAULT_PARAMS:-}}"
           # Append GitHubToken from secret by default, if provided and not already present
           if [[ -n "${GITHUB_PAT}" && "${PARAMS}" != *"GitHubToken="* ]]; then
@@ -58,6 +67,7 @@ jobs:
           fi
           echo "region=$REGION" >> "$GITHUB_OUTPUT"
           echo "stack=$STACK" >> "$GITHUB_OUTPUT"
+          echo "perf_stack=$PERF_STACK" >> "$GITHUB_OUTPUT"
           echo "params=$PARAMS" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials (Access Keys)
@@ -89,6 +99,58 @@ jobs:
           fi
           # Avoid printing full command to reduce secret exposure in logs
           echo "Running CloudFormation deploy for stack: $STACK_NAME"
+          "${CMD[@]}"
+
+      - name: Fetch stack outputs for performance pipeline
+        id: perf_outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          STACK_NAME="${{ steps.resolve.outputs.stack }}"
+          ARTIFACT_BUCKET=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='ArtifactBucketName'].OutputValue" --output text)
+          CODEBUILD_ROLE=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='CodeBuildServiceRoleArn'].OutputValue" --output text)
+          CODEPIPELINE_ROLE=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='CodePipelineServiceRoleArn'].OutputValue" --output text)
+          GITHUB_REPO=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+            --query "Stacks[0].Parameters[?ParameterKey=='GitHubRepo'].ParameterValue" --output text)
+          GITHUB_BRANCH=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+            --query "Stacks[0].Parameters[?ParameterKey=='GitHubBranch'].ParameterValue" --output text)
+          echo "artifact_bucket=$ARTIFACT_BUCKET" >> "$GITHUB_OUTPUT"
+          echo "codebuild_role=$CODEBUILD_ROLE" >> "$GITHUB_OUTPUT"
+          echo "codepipeline_role=$CODEPIPELINE_ROLE" >> "$GITHUB_OUTPUT"
+          echo "github_repo=$GITHUB_REPO" >> "$GITHUB_OUTPUT"
+          echo "github_branch=$GITHUB_BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy performance pipeline stack
+        shell: bash
+        env:
+          GITHUB_PAT: ${{ secrets.CODEPIPELINE_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          PERF_STACK_NAME="${{ steps.resolve.outputs.perf_stack }}"
+          PARAMS=()
+          if [[ -n "${{ steps.perf_outputs.outputs.github_repo }}" ]]; then
+            PARAMS+=("GitHubRepo=${{ steps.perf_outputs.outputs.github_repo }}")
+          fi
+          if [[ -n "${{ steps.perf_outputs.outputs.github_branch }}" ]]; then
+            PARAMS+=("GitHubBranch=${{ steps.perf_outputs.outputs.github_branch }}")
+          fi
+          if [[ -n "${GITHUB_PAT}" ]]; then
+            PARAMS+=("GitHubToken=${GITHUB_PAT}")
+          fi
+          PARAMS+=("ArtifactBucketName=${{ steps.perf_outputs.outputs.artifact_bucket }}")
+          PARAMS+=("CodeBuildServiceRoleArn=${{ steps.perf_outputs.outputs.codebuild_role }}")
+          PARAMS+=("CodePipelineServiceRoleArn=${{ steps.perf_outputs.outputs.codepipeline_role }}")
+          CMD=(aws cloudformation deploy \
+            --stack-name "$PERF_STACK_NAME" \
+            --template-file "${{ env.PERF_TEMPLATE_FILE }}" \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides)
+          CMD+=("${PARAMS[@]}")
+          echo "Running CloudFormation deploy for performance stack: $PERF_STACK_NAME"
           "${CMD[@]}"
 
       - name: Show CloudFormation failure events

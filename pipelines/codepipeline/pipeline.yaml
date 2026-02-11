@@ -20,10 +20,6 @@ Parameters:
     Type: String
     Description: EKS cluster name for deployment
     Default: materclaims-cluster
-  PerformanceTestUrl:
-    Type: String
-    Description: Base URL that performance tests will target
-    Default: https://example.com
 
 Resources:
   CodeBuildServiceRole:
@@ -319,20 +315,6 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: pipelines/codebuild/buildspec-integration.yml
 
-  PerformanceTestBuild:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: claim-status-api-performance-test
-      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
-      Artifacts:
-        Type: CODEPIPELINE
-      Environment:
-        Type: LINUX_CONTAINER
-        ComputeType: BUILD_GENERAL1_MEDIUM
-        Image: aws/codebuild/standard:7.0
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: pipelines/codebuild/buildspec-perf.yml
 
   DeployBuild:
     Type: AWS::CodeBuild::Project
@@ -428,32 +410,32 @@ Resources:
               OutputArtifacts:
                 - Name: SourceOutput
 
-        # - Name: BuildTestScan
-        #   Actions:
-        #     - Name: UnitTest
-        #       ActionTypeId:
-        #         Category: Build
-        #         Owner: AWS
-        #         Provider: CodeBuild
-        #         Version: '1'
-        #       Configuration:
-        #         ProjectName: !Ref UnitTestBuild
-        #       InputArtifacts:
-        #         - Name: SourceOutput
-        #       OutputArtifacts:
-        #         - Name: TestOutput
+        - Name: BuildTestScan
+          Actions:
+            - Name: UnitTest
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref UnitTestBuild
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: TestOutput
 
-        #     - Name: SecurityScan
-        #       ActionTypeId:
-        #         Category: Build
-        #         Owner: AWS
-        #         Provider: CodeBuild
-        #         Version: '1'
-        #       Configuration:
-        #         ProjectName: !Ref SecurityScanBuild
-        #       InputArtifacts:
-        #         - Name: SourceOutput
-        #       RunOrder: 2
+            - Name: SecurityScan
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref SecurityScanBuild
+              InputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 2
 
         - Name: DockerPushAndScan
           Actions:
@@ -539,18 +521,6 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
 
-        - Name: PerformanceTest
-          Actions:
-            - Name: LoadTest
-              ActionTypeId:
-                Category: Test
-                Owner: AWS
-                Provider: CodeBuild
-                Version: '1'
-              Configuration:
-                ProjectName: !Ref PerformanceTestBuild
-              InputArtifacts:
-                - Name: SourceOutput
 
 Outputs:
   PipelineUrl:
@@ -566,3 +536,9 @@ Outputs:
     Value: !GetAtt CodeBuildServiceRole.Arn
     Export:
       Name: !Sub '${AWS::StackName}-CodeBuildServiceRoleArn'
+
+  CodePipelineServiceRoleArn:
+    Description: CodePipeline service role ARN
+    Value: !GetAtt CodePipelineServiceRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-CodePipelineServiceRoleArn'
