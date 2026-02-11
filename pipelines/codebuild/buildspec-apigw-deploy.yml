@@ -26,6 +26,9 @@ phases:
     commands:
       - echo "Resolving service endpoint for $SERVICE_NAME..."
       - |
+        DEPLOYMENT_VERSION="$(echo "$CODEBUILD_RESOLVED_SOURCE_VERSION" | cut -c1-8)"
+        echo "Deployment version: ${DEPLOYMENT_VERSION}"
+      - |
         for i in $(seq 1 30); do
           HOSTNAME=$(kubectl get svc "$SERVICE_NAME" -n "$NAMESPACE" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
           IPADDR=$(kubectl get svc "$SERVICE_NAME" -n "$NAMESPACE" -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
@@ -51,10 +54,9 @@ phases:
         # Check if stack exists and is in ROLLBACK_COMPLETE state
         STACK_STATUS=$(aws cloudformation describe-stacks --stack-name "$APIGW_STACK_NAME" --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
         if [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ]; then
-          echo "Stack is in ROLLBACK_COMPLETE state, deleting it first..."
-          aws cloudformation delete-stack --stack-name "$APIGW_STACK_NAME"
-          echo "Waiting for stack deletion to complete..."
-          aws cloudformation wait stack-delete-complete --stack-name "$APIGW_STACK_NAME"
+          echo "Stack is in ROLLBACK_COMPLETE state; refusing to delete a declarative stack." >&2
+          echo "Resolve the rollback (or delete intentionally) and re-run this pipeline." >&2
+          exit 1
         fi
       - echo "Deploying CloudFormation stack with proper role configuration..."
       - |
@@ -71,7 +73,7 @@ phases:
             --parameter-overrides \
               ServiceEndpoint="${SERVICE_ENDPOINT}" \
               EnvironmentName="${ENVIRONMENT_NAME}" \
-              DeploymentVersion="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-8)" \
+              DeploymentVersion="${DEPLOYMENT_VERSION}" \
             --role-arn "${CFN_EXEC_ROLE_ARN}" \
             --no-fail-on-empty-changeset
         else
@@ -81,7 +83,7 @@ phases:
             --parameter-overrides \
               ServiceEndpoint="${SERVICE_ENDPOINT}" \
               EnvironmentName="${ENVIRONMENT_NAME}" \
-              DeploymentVersion="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-8)" \
+              DeploymentVersion="${DEPLOYMENT_VERSION}" \
             --no-fail-on-empty-changeset
         fi
   post_build:
