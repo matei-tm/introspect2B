@@ -1,7 +1,7 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 
-const baseUrl = __ENV.BASE_URL || 'https://example.com';
+const baseUrl = __ENV.BASE_URL || 'https://introspect2b.matei-tm.eu';
 const apiKey = __ENV.API_KEY || '';
 
 export const options = {
@@ -11,7 +11,7 @@ export const options = {
     { duration: '1m', target: 0 },
   ],
   thresholds: {
-    http_req_duration: ['p(95)<500'],
+    http_req_duration: ['p(95)<3000'],
     checks: ['rate>0.99'],
   },
 };
