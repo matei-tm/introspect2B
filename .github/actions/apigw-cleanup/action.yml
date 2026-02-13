@@ -1,0 +1,69 @@
+name: API Gateway CloudFormation Cleanup
+description: Delete the API Gateway CloudFormation stack when it is stuck.
+inputs:
+  aws_region:
+    description: AWS region
+    required: true
+  stack_name:
+    description: CloudFormation stack name
+    required: true
+  role_arn:
+    description: Optional CloudFormation execution role ARN
+    required: false
+  aws_access_key_id:
+    description: AWS access key id
+    required: true
+  aws_secret_access_key:
+    description: AWS secret access key
+    required: true
+  aws_session_token:
+    description: AWS session token (optional)
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ inputs.aws_access_key_id }}
+        aws-secret-access-key: ${{ inputs.aws_secret_access_key }}
+        aws-session-token: ${{ inputs.aws_session_token }}
+        aws-region: ${{ inputs.aws_region }}
+
+    - name: Check stack status
+      id: status
+      shell: bash
+      env:
+        STACK_NAME: ${{ inputs.stack_name }}
+        AWS_REGION: ${{ inputs.aws_region }}
+      run: |
+        set -euo pipefail
+        STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$AWS_REGION" \
+          --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+        echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+        echo "Stack status: $STATUS"
+
+    - name: Delete stack if stuck
+      if: steps.status.outputs.status == 'DELETE_FAILED' || steps.status.outputs.status == 'ROLLBACK_COMPLETE'
+      shell: bash
+      env:
+        STACK_NAME: ${{ inputs.stack_name }}
+        AWS_REGION: ${{ inputs.aws_region }}
+        ROLE_ARN: ${{ inputs.role_arn }}
+      run: |
+        set -euo pipefail
+        if [[ -n "$ROLE_ARN" ]]; then
+          echo "Deleting stack with role: $ROLE_ARN"
+          aws cloudformation delete-stack --stack-name "$STACK_NAME" --region "$AWS_REGION" --role-arn "$ROLE_ARN"
+        else
+          echo "Deleting stack without explicit role"
+          aws cloudformation delete-stack --stack-name "$STACK_NAME" --region "$AWS_REGION"
+        fi
+        echo "Waiting for stack deletion to complete..."
+        aws cloudformation wait stack-delete-complete --stack-name "$STACK_NAME" --region "$AWS_REGION"
+
+    - name: Skip when stack is healthy
+      if: steps.status.outputs.status != 'DELETE_FAILED' && steps.status.outputs.status != 'ROLLBACK_COMPLETE'
+      shell: bash
+      run: |
+        echo "Stack is not in a cleanup state; no action taken."
