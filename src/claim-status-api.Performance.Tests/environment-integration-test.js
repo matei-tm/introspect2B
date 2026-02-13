@@ -30,6 +30,7 @@ export default function () {
 
   group('GET Claims Endpoint', () => {
     const getRes = http.get(`${baseUrl}/api/claims/CLAIM-001`, { headers });
+    console.log(`GET /api/claims response: ${getRes.body}`);
     check(getRes, {
       'GET /api/claims returns 200': (r) => r.status === 200,
       'GET returns valid JSON': (r) => {
@@ -63,6 +64,8 @@ export default function () {
     } catch (e) {
       postJson = null;
     }
+
+    console.log(`POST /summarize response: ${postJson ? JSON.stringify(postJson) : postRes.body}`);
 
 
     const hasNodeError = postJson &&
