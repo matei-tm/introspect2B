@@ -54,6 +54,11 @@ module "eks" {
     }
   }
 
+  node_iam_role_additional_policies = {
+    cloudwatch_agent = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+    xray_write       = "arn:aws:iam::aws:policy/AWSXRayWriteOnlyAccess"
+  }
+
   # Add-ons
   cluster_addons = {
     coredns = {
@@ -66,6 +71,9 @@ module "eks" {
       most_recent = true
     }
     eks-pod-identity-agent = {
+      most_recent = true
+    }
+    amazon-cloudwatch-observability = {
       most_recent = true
     }
   }

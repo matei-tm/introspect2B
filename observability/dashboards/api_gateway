@@ -1,0 +1,137 @@
+{
+    "widgets": [
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 0,
+            "width": 8,
+            "height": 5,
+            "properties": {
+                "metrics": [
+                    [ "AWS/ApiGateway", "Count", "ApiName", "claim-status-api-dev", { "period": 300, "stat": "Sum" } ]
+                ],
+                "legend": {
+                    "position": "bottom"
+                },
+                "region": "us-east-1",
+                "liveData": false,
+                "timezone": "UTC",
+                "title": "Count: Sum"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 8,
+            "y": 0,
+            "width": 8,
+            "height": 5,
+            "properties": {
+                "metrics": [
+                    [ "AWS/ApiGateway", "5XXError", "ApiName", "claim-status-api-dev", { "period": 300, "stat": "Sum" } ]
+                ],
+                "legend": {
+                    "position": "bottom"
+                },
+                "region": "us-east-1",
+                "liveData": false,
+                "timezone": "UTC",
+                "title": "5XXError: Sum"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 16,
+            "y": 0,
+            "width": 8,
+            "height": 5,
+            "properties": {
+                "metrics": [
+                    [ "AWS/ApiGateway", "4XXError", "ApiName", "claim-status-api-dev", { "period": 300, "stat": "Sum" } ]
+                ],
+                "legend": {
+                    "position": "bottom"
+                },
+                "region": "us-east-1",
+                "liveData": false,
+                "timezone": "UTC",
+                "title": "4XXError: Sum"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 5,
+            "width": 12,
+            "height": 5,
+            "properties": {
+                "metrics": [
+                    [ "AWS/ApiGateway", "Latency", "ApiName", "claim-status-api-dev", { "period": 300, "stat": "Average" } ]
+                ],
+                "legend": {
+                    "position": "bottom"
+                },
+                "region": "us-east-1",
+                "liveData": false,
+                "timezone": "UTC",
+                "title": "Latency: Average"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 5,
+            "width": 12,
+            "height": 5,
+            "properties": {
+                "metrics": [
+                    [ "AWS/ApiGateway", "IntegrationLatency", "ApiName", "claim-status-api-dev", { "period": 300, "stat": "Average" } ]
+                ],
+                "legend": {
+                    "position": "bottom"
+                },
+                "region": "us-east-1",
+                "liveData": false,
+                "timezone": "UTC",
+                "title": "IntegrationLatency: Average"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 10,
+            "width": 12,
+            "height": 5,
+            "properties": {
+                "metrics": [
+                    [ "AWS/ApiGateway", "CacheHitCount", "ApiName", "claim-status-api-dev", { "period": 300, "stat": "Sum" } ]
+                ],
+                "legend": {
+                    "position": "bottom"
+                },
+                "region": "us-east-1",
+                "liveData": false,
+                "timezone": "UTC",
+                "title": "CacheHitCount: Sum"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 10,
+            "width": 12,
+            "height": 5,
+            "properties": {
+                "metrics": [
+                    [ "AWS/ApiGateway", "CacheMissCount", "ApiName", "claim-status-api-dev", { "period": 300, "stat": "Sum" } ]
+                ],
+                "legend": {
+                    "position": "bottom"
+                },
+                "region": "us-east-1",
+                "liveData": false,
+                "timezone": "UTC",
+                "title": "CacheMissCount: Sum"
+            }
+        }
+    ]
+}
