@@ -1,0 +1,33 @@
+name: 1.1 API Gateway Cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        description: AWS region for API Gateway cleanup
+        required: false
+        default: us-east-1
+        type: string
+      apigw_stack_name:
+        description: API Gateway CloudFormation stack name
+        required: false
+        default: claim-status-api-apigw
+        type: string
+      apigw_role_arn:
+        description: Optional CloudFormation execution role ARN for API Gateway cleanup
+        required: false
+        type: string
+
+jobs:
+  apigw-cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/apigw-cleanup
+        with:
+          aws_region: ${{ github.event.inputs.aws_region || 'us-east-1' }}
+          stack_name: ${{ github.event.inputs.apigw_stack_name || 'claim-status-api-apigw' }}
+          role_arn: ${{ github.event.inputs.apigw_role_arn || '' }}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}

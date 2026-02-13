@@ -1,4 +1,4 @@
-name: 1. Lab Setup
+name: 1. Lab Setup (1.1 API Gateway Cleanup + 1.2 Setup Terraform Backend + 1.3 Deploy CodePipeline)
 
 on:
   workflow_dispatch:
@@ -49,7 +49,6 @@ jobs:
           site_password: ${{ secrets.SITE_PASSWORD }}
 
   apigw-cleanup:
-    if: ${{ always() && (needs.start-lab.result == 'success' || needs.start-lab.result == 'skipped') }}
     runs-on: ubuntu-latest
     needs: start-lab
     steps:

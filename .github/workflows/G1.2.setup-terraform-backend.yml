@@ -1,0 +1,22 @@
+name: 1.2 Setup Terraform Backend
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        description: AWS region for Terraform backend
+        required: false
+        default: us-east-1
+        type: string
+
+jobs:
+  setup-terraform-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-terraform-backend
+        with:
+          aws_region: ${{ github.event.inputs.aws_region || 'us-east-1' }}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
