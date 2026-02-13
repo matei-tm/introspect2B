@@ -18,7 +18,7 @@ export const options = {
 
 export default function () {
   const headers = apiKey ? { 'x-api-key': apiKey } : {};
-  
+
   // Test GET /api/claims/{claimId}
   const getRes = http.get(`${baseUrl}/api/claims/CLAIM-001`, { headers });
   check(getRes, {
@@ -36,10 +36,26 @@ export default function () {
     JSON.stringify({ notesOverride: 'Performance test override' }),
     { headers: postHeaders }
   );
+  let postJson = null;
+  try {
+    postJson = JSON.parse(postRes.body);
+  } catch (e) {
+    postJson = null;
+  }
+
+
+  const hasNodeError = postJson &&
+    JSON.stringify(postJson).toLowerCase().includes('node error');
+
+  const hasSummaryNodes = postJson &&
+    Object.prototype.hasOwnProperty.call(postJson, 'generatedAt') &&
+    Object.prototype.hasOwnProperty.call(postJson, 'model');
+
   check(postRes, {
-    'POST status is 200': (r) => r.status === 200,
-    'POST response time < 20000ms': (r) => r.timings.duration < 20000,
-    'POST has summary': (r) => r.body.includes('summary') || r.body.includes('Summary'),
+    'POST /summarize returns 200 with summary nodes': (r) => r.status === 200 && hasSummaryNodes,
+    'POST returns valid JSON': () => postJson !== null,
+    'POST response does not contain node error': () => !hasNodeError,
+    'POST response time < 20000ms': (r) => r.timings.duration < 20000, // Bedrock can be slow
   });
 
   sleep(1);

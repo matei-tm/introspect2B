@@ -57,17 +57,25 @@ export default function () {
       { headers: postHeaders }
     );
     
+    let postJson = null;
+    try {
+      postJson = JSON.parse(postRes.body);
+    } catch (e) {
+      postJson = null;
+    }
+
+
+    const hasNodeError = postJson &&
+      JSON.stringify(postJson).toLowerCase().includes('node error');
+
+    const hasSummaryNodes = postJson &&
+      Object.prototype.hasOwnProperty.call(postJson, 'generatedAt') &&
+      Object.prototype.hasOwnProperty.call(postJson, 'model');
+
     check(postRes, {
-      'POST /summarize returns 200': (r) => r.status === 200,
-      'POST returns valid JSON': (r) => {
-        try {
-          JSON.parse(r.body);
-          return true;
-        } catch (e) {
-          return false;
-        }
-      },
-      'POST response contains summary': (r) => r.body.includes('summary') || r.body.includes('Summary'),
+      'POST /summarize returns 200 with summary nodes': (r) => r.status === 200 && hasSummaryNodes,
+      'POST returns valid JSON': () => postJson !== null,
+      'POST response does not contain node error': () => !hasNodeError,
       'POST response time < 5s': (r) => r.timings.duration < 5000, // Bedrock can be slow
     });
   });
