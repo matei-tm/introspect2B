@@ -13,6 +13,10 @@ inputs:
   codepipeline_stack_name:
     description: Optional CodePipeline CloudFormation stack name used to resolve the execution role
     required: false
+  create_temp_role:
+    description: Create a temporary CloudFormation execution role if no role is provided/resolved
+    required: false
+    default: "true"
   aws_access_key_id:
     description: AWS access key id
     required: true
@@ -54,6 +58,7 @@ runs:
         AWS_REGION: ${{ inputs.aws_region }}
         ROLE_ARN: ${{ inputs.role_arn }}
         CODEPIPELINE_STACK_NAME: ${{ inputs.codepipeline_stack_name }}
+        CREATE_TEMP_ROLE: ${{ inputs.create_temp_role }}
       run: |
         set -euo pipefail
         if [[ -z "$CODEPIPELINE_STACK_NAME" ]]; then
@@ -72,6 +77,20 @@ runs:
           echo "Deleting stack with role: $ROLE_ARN"
           aws cloudformation delete-stack --stack-name "$STACK_NAME" --region "$AWS_REGION" --role-arn "$ROLE_ARN"
         else
+          if [[ "$CREATE_TEMP_ROLE" == "true" ]]; then
+            ROLE_NAME="temp-cfn-cleanup-${GITHUB_RUN_ID:-$(date +%s)}"
+            TRUST_POLICY='{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"cloudformation.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+            aws iam create-role --role-name "$ROLE_NAME" --assume-role-policy-document "$TRUST_POLICY" >/dev/null
+            aws iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
+            ROLE_ARN=$(aws iam get-role --role-name "$ROLE_NAME" --query 'Role.Arn' --output text)
+            echo "Deleting stack with temporary role: $ROLE_ARN"
+            aws cloudformation delete-stack --stack-name "$STACK_NAME" --region "$AWS_REGION" --role-arn "$ROLE_ARN"
+            echo "Waiting for stack deletion to complete..."
+            aws cloudformation wait stack-delete-complete --stack-name "$STACK_NAME" --region "$AWS_REGION"
+            aws iam detach-role-policy --role-name "$ROLE_NAME" --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
+            aws iam delete-role --role-name "$ROLE_NAME"
+            exit 0
+          fi
           echo "Deleting stack without explicit role"
           aws cloudformation delete-stack --stack-name "$STACK_NAME" --region "$AWS_REGION"
         fi
