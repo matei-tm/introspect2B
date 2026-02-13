@@ -1,0 +1,142 @@
+name: Deploy CodePipeline
+description: Deploy the main and performance CodePipeline stacks.
+inputs:
+  aws_region:
+    description: AWS region to deploy to
+    required: true
+  stack_name:
+    description: CloudFormation stack name
+    required: true
+  perf_stack_name:
+    description: CloudFormation stack name for the performance pipeline
+    required: true
+  parameter_overrides:
+    description: Optional CloudFormation parameter overrides (key=value ...)
+    required: false
+  github_pat:
+    description: GitHub token for CodePipeline source
+    required: false
+  aws_access_key_id:
+    description: AWS access key id
+    required: true
+  aws_secret_access_key:
+    description: AWS secret access key
+    required: true
+  aws_session_token:
+    description: AWS session token (optional)
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials (Access Keys)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ inputs.aws_access_key_id }}
+        aws-secret-access-key: ${{ inputs.aws_secret_access_key }}
+        aws-session-token: ${{ inputs.aws_session_token }}
+        aws-region: ${{ inputs.aws_region }}
+
+    - name: Validate CloudFormation template
+      shell: bash
+      run: |
+        aws cloudformation validate-template --template-body file://pipelines/codepipeline/pipeline.yaml
+
+    - name: Deploy CloudFormation stack
+      shell: bash
+      env:
+        PARAMS_INPUT: ${{ inputs.parameter_overrides }}
+        GITHUB_PAT: ${{ inputs.github_pat }}
+      run: |
+        set -euo pipefail
+        STACK_NAME="${{ inputs.stack_name }}"
+        PARAMS="${PARAMS_INPUT:-}"
+        if [[ -n "${GITHUB_PAT}" && "${PARAMS}" != *"GitHubToken="* ]]; then
+          if [[ -n "${PARAMS}" ]]; then
+            PARAMS+=" "
+          fi
+          PARAMS+="GitHubToken=${GITHUB_PAT}"
+        fi
+        CMD=(aws cloudformation deploy \
+          --stack-name "$STACK_NAME" \
+          --template-file pipelines/codepipeline/pipeline.yaml \
+          --capabilities CAPABILITY_NAMED_IAM \
+          --no-fail-on-empty-changeset)
+        if [[ -n "$PARAMS" ]]; then
+          # shellcheck disable=SC2206
+          CMD+=(--parameter-overrides $PARAMS)
+        fi
+        echo "Running CloudFormation deploy for stack: $STACK_NAME"
+        "${CMD[@]}"
+
+    - name: Fetch stack outputs for performance pipeline
+      id: perf_outputs
+      shell: bash
+      run: |
+        set -euo pipefail
+        STACK_NAME="${{ inputs.stack_name }}"
+        ARTIFACT_BUCKET=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+          --query "Stacks[0].Outputs[?OutputKey=='ArtifactBucketName'].OutputValue" --output text)
+        CODEBUILD_ROLE=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+          --query "Stacks[0].Outputs[?OutputKey=='CodeBuildServiceRoleArn'].OutputValue" --output text)
+        CODEPIPELINE_ROLE=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+          --query "Stacks[0].Outputs[?OutputKey=='CodePipelineServiceRoleArn'].OutputValue" --output text)
+        GITHUB_REPO=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+          --query "Stacks[0].Parameters[?ParameterKey=='GitHubRepo'].ParameterValue" --output text)
+        GITHUB_BRANCH=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+          --query "Stacks[0].Parameters[?ParameterKey=='GitHubBranch'].ParameterValue" --output text)
+        echo "artifact_bucket=$ARTIFACT_BUCKET" >> "$GITHUB_OUTPUT"
+        echo "codebuild_role=$CODEBUILD_ROLE" >> "$GITHUB_OUTPUT"
+        echo "codepipeline_role=$CODEPIPELINE_ROLE" >> "$GITHUB_OUTPUT"
+        echo "github_repo=$GITHUB_REPO" >> "$GITHUB_OUTPUT"
+        echo "github_branch=$GITHUB_BRANCH" >> "$GITHUB_OUTPUT"
+
+    - name: Deploy performance pipeline stack
+      shell: bash
+      env:
+        GITHUB_PAT: ${{ inputs.github_pat }}
+      run: |
+        set -euo pipefail
+        PERF_STACK_NAME="${{ inputs.perf_stack_name }}"
+        PARAMS=()
+        if [[ -n "${{ steps.perf_outputs.outputs.github_repo }}" ]]; then
+          PARAMS+=("GitHubRepo=${{ steps.perf_outputs.outputs.github_repo }}")
+        fi
+        if [[ -n "${{ steps.perf_outputs.outputs.github_branch }}" ]]; then
+          PARAMS+=("GitHubBranch=${{ steps.perf_outputs.outputs.github_branch }}")
+        fi
+        if [[ -n "${GITHUB_PAT}" ]]; then
+          PARAMS+=("GitHubToken=${GITHUB_PAT}")
+        fi
+        PARAMS+=("ArtifactBucketName=${{ steps.perf_outputs.outputs.artifact_bucket }}")
+        PARAMS+=("CodeBuildServiceRoleArn=${{ steps.perf_outputs.outputs.codebuild_role }}")
+        PARAMS+=("CodePipelineServiceRoleArn=${{ steps.perf_outputs.outputs.codepipeline_role }}")
+        CMD=(aws cloudformation deploy \
+          --stack-name "$PERF_STACK_NAME" \
+          --template-file pipelines/codepipeline/pipeline-performance.yaml \
+          --capabilities CAPABILITY_NAMED_IAM \
+          --no-fail-on-empty-changeset \
+          --parameter-overrides)
+        CMD+=("${PARAMS[@]}")
+        echo "Running CloudFormation deploy for performance stack: $PERF_STACK_NAME"
+        "${CMD[@]}"
+
+    - name: Show CloudFormation failure events
+      if: failure()
+      shell: bash
+      run: |
+        set -euo pipefail
+        STACK_NAME="${{ inputs.stack_name }}"
+        echo "Deployment failed. Fetching CloudFormation events for: $STACK_NAME"
+        aws cloudformation describe-stack-events --stack-name "$STACK_NAME" --output table || true
+        echo "Current stack status:"
+        aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+          --query "[Stacks[0].StackStatus, Stacks[0].StackStatusReason]" --output text || true
+
+    - name: Show stack outputs
+      shell: bash
+      run: |
+        aws cloudformation describe-stacks --stack-name "${{ inputs.stack_name }}" \
+          --query "Stacks[0].Outputs" --output table || true

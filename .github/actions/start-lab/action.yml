@@ -1,0 +1,48 @@
+name: Start Lab
+description: Initialize the lab environment and capture screenshots.
+inputs:
+  site_user:
+    description: Site username
+    required: true
+  site_password:
+    description: Site password
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: src/labinit
+      run: npm ci
+
+    - name: Install Playwright browsers
+      shell: bash
+      working-directory: src/labinit
+      run: npx playwright install --with-deps
+
+    - name: Initialize the lab environment
+      shell: bash
+      working-directory: src/labinit
+      env:
+        SITE_USER: ${{ inputs.site_user }}
+        SITE_PASSWORD: ${{ inputs.site_password }}
+      run: npm test
+
+    - name: Add all screenshots to summary
+      if: always()
+      shell: bash
+      run: |
+        echo "## Screenshots" >> "$GITHUB_STEP_SUMMARY"
+        shopt -s nullglob
+        for f in src/labinit/test-results/**/*.png; do
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### $(basename "$f")" >> "$GITHUB_STEP_SUMMARY"
+          echo "![screenshot]($f)" >> "$GITHUB_STEP_SUMMARY"
+        done

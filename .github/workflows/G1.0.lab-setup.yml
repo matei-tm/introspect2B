@@ -1,0 +1,59 @@
+name: 1.0 Lab Setup (1.1-1.3)
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        description: AWS region for backend resources and pipeline deployment
+        required: false
+        default: us-east-1
+        type: string
+      stack_name:
+        description: CloudFormation stack name
+        required: false
+        default: introspect2b-codepipeline-v2
+        type: string
+      perf_stack_name:
+        description: CloudFormation stack name for the performance pipeline
+        required: false
+        default: introspect2b-codepipeline-perf
+        type: string
+      parameter_overrides:
+        description: Optional CloudFormation parameter overrides (key=value ...)
+        required: false
+        type: string
+
+jobs:
+  start-lab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/start-lab
+        with:
+          site_user: ${{ secrets.SITE_USER }}
+          site_password: ${{ secrets.SITE_PASSWORD }}
+
+  setup-terraform-backend:
+    runs-on: ubuntu-latest
+    needs: start-lab
+    steps:
+      - uses: ./.github/actions/setup-terraform-backend
+        with:
+          aws_region: ${{ github.event.inputs.aws_region || 'us-east-1' }}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+
+  deploy-codepipeline:
+    runs-on: ubuntu-latest
+    needs: start-lab
+    steps:
+      - uses: ./.github/actions/deploy-codepipeline
+        with:
+          aws_region: ${{ github.event.inputs.aws_region || 'us-east-1' }}
+          stack_name: ${{ github.event.inputs.stack_name || 'introspect2b-codepipeline-v2' }}
+          perf_stack_name: ${{ github.event.inputs.perf_stack_name || 'introspect2b-codepipeline-perf' }}
+          parameter_overrides: ${{ github.event.inputs.parameter_overrides || '' }}
+          github_pat: ${{ secrets.CODEPIPELINE_GITHUB_TOKEN }}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}

@@ -1,0 +1,157 @@
+name: Setup Terraform Backend
+description: Create S3/DynamoDB backend resources for Terraform state.
+inputs:
+  aws_region:
+    description: AWS region for backend resources
+    required: true
+  aws_access_key_id:
+    description: AWS access key id
+    required: true
+  aws_secret_access_key:
+    description: AWS secret access key
+    required: true
+  aws_session_token:
+    description: AWS session token (optional)
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ inputs.aws_access_key_id }}
+        aws-secret-access-key: ${{ inputs.aws_secret_access_key }}
+        aws-session-token: ${{ inputs.aws_session_token }}
+        aws-region: ${{ inputs.aws_region }}
+
+    - name: Get AWS Account ID
+      shell: bash
+      run: |
+        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        echo "account_id=$ACCOUNT_ID" >> "$GITHUB_OUTPUT"
+        echo "AWS Account ID: $ACCOUNT_ID"
+
+    - name: Check if backend already exists
+      id: check
+      shell: bash
+      env:
+        AWS_REGION: ${{ inputs.aws_region }}
+      run: |
+        BUCKET_NAME="introspect2b-terraform-state-$(aws sts get-caller-identity --query Account --output text)"
+
+        if aws s3 ls "s3://$BUCKET_NAME" 2>/dev/null; then
+          echo "exists=true" >> "$GITHUB_OUTPUT"
+           echo "S3 bucket $BUCKET_NAME already exists"
+        else
+          echo "exists=false" >> "$GITHUB_OUTPUT"
+           echo "S3 bucket $BUCKET_NAME does not exist, will create"
+        fi
+
+        if aws dynamodb describe-table --table-name introspect2b-terraform-locks --region "$AWS_REGION" 2>/dev/null; then
+          echo "dynamodb_exists=true" >> "$GITHUB_OUTPUT"
+          echo "DynamoDB table introspect2b-terraform-locks already exists"
+        else
+          echo "dynamodb_exists=false" >> "$GITHUB_OUTPUT"
+          echo "DynamoDB table does not exist, will create"
+        fi
+
+    - name: Run backend setup script
+      if: steps.check.outputs.exists == 'false' || steps.check.outputs.dynamodb_exists == 'false'
+      shell: bash
+      working-directory: iac/terraform
+      env:
+        AWS_REGION: ${{ inputs.aws_region }}
+      run: |
+        chmod +x backend-setup.sh
+        ./backend-setup.sh "$AWS_REGION"
+
+    - name: Verify backend resources
+      shell: bash
+      env:
+        AWS_REGION: ${{ inputs.aws_region }}
+      run: |
+        BUCKET_NAME="introspect2b-terraform-state-$(aws sts get-caller-identity --query Account --output text)"
+
+        echo "### S3 Bucket Configuration" >> "$GITHUB_STEP_SUMMARY"
+        aws s3api get-bucket-versioning --bucket "$BUCKET_NAME" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+
+        echo "### DynamoDB Table Status" >> "$GITHUB_STEP_SUMMARY"
+        aws dynamodb describe-table --table-name introspect2b-terraform-locks --region "$AWS_REGION" \
+          --query 'Table.[TableName,TableStatus,BillingModeSummary.BillingMode]' --output table >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Generate backend configuration
+      shell: bash
+      env:
+        AWS_REGION: ${{ inputs.aws_region }}
+      run: |
+        BUCKET_NAME="introspect2b-terraform-state-$(aws sts get-caller-identity --query Account --output text)"
+
+        echo "## Terraform Backend Setup Complete" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "### Backend Configuration" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "Update \`iac/terraform/main.tf\` with:" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo '```hcl' >> "$GITHUB_STEP_SUMMARY"
+        echo 'terraform {' >> "$GITHUB_STEP_SUMMARY"
+        echo '  backend "s3" {' >> "$GITHUB_STEP_SUMMARY"
+        echo "    bucket         = \"$BUCKET_NAME\"" >> "$GITHUB_STEP_SUMMARY"
+        echo '    key            = "terraform.tfstate"' >> "$GITHUB_STEP_SUMMARY"
+        echo "    region         = \"$AWS_REGION\"" >> "$GITHUB_STEP_SUMMARY"
+        echo '    dynamodb_table = "introspect2b-terraform-locks"' >> "$GITHUB_STEP_SUMMARY"
+        echo '    encrypt        = true' >> "$GITHUB_STEP_SUMMARY"
+        echo '  }' >> "$GITHUB_STEP_SUMMARY"
+        echo '}' >> "$GITHUB_STEP_SUMMARY"
+        echo '```' >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "### Next Steps" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "1. Update the backend configuration in \`iac/terraform/main.tf\`" >> "$GITHUB_STEP_SUMMARY"
+        echo "2. Run \`terraform init -migrate-state\` to migrate local state (if exists)" >> "$GITHUB_STEP_SUMMARY"
+        echo "3. Run the **2. Deploy Terraform Infrastructure** workflow" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "### Resources Created" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "- **S3 Bucket**: \`$BUCKET_NAME\`" >> "$GITHUB_STEP_SUMMARY"
+        echo "  - Versioning: Enabled" >> "$GITHUB_STEP_SUMMARY"
+        echo "  - Encryption: AES256" >> "$GITHUB_STEP_SUMMARY"
+        echo "  - Public Access: Blocked" >> "$GITHUB_STEP_SUMMARY"
+        echo "- **DynamoDB Table**: \`introspect2b-terraform-locks\`" >> "$GITHUB_STEP_SUMMARY"
+        echo "  - Region: $AWS_REGION" >> "$GITHUB_STEP_SUMMARY"
+        echo "  - Billing: Pay-per-request" >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Save configuration to artifact
+      shell: bash
+      env:
+        AWS_REGION: ${{ inputs.aws_region }}
+      run: |
+        BUCKET_NAME="introspect2b-terraform-state-$(aws sts get-caller-identity --query Account --output text)"
+        cat > backend-config.txt <<EOF
+        # Terraform Backend Configuration
+        # Generated: $(date)
+        # AWS Account: $(aws sts get-caller-identity --query Account --output text)
+        # Region: $AWS_REGION
+
+        terraform {
+          backend "s3" {
+            bucket         = "$BUCKET_NAME"
+            key            = "terraform.tfstate"
+            region         = "$AWS_REGION"
+            dynamodb_table = "introspect2b-terraform-locks"
+            encrypt        = true
+          }
+        }
+        EOF
+        cat backend-config.txt
+
+    - name: Upload backend configuration
+      uses: actions/upload-artifact@v4
+      with:
+        name: terraform-backend-config
+        path: backend-config.txt
+        retention-days: 30
