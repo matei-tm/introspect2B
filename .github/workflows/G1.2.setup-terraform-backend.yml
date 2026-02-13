@@ -28,6 +28,7 @@ jobs:
     name: Create S3 Backend Resources
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-terraform-backend
         with:
           aws_region: ${{ github.event.inputs.aws_region || inputs.aws_region || 'us-east-1' }}

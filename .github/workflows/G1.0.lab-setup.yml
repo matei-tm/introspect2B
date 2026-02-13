@@ -27,6 +27,7 @@ jobs:
   start-lab:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/start-lab
         with:
           site_user: ${{ secrets.SITE_USER }}
@@ -36,6 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: start-lab
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-terraform-backend
         with:
           aws_region: ${{ github.event.inputs.aws_region || 'us-east-1' }}
@@ -47,6 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: start-lab
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/deploy-codepipeline
         with:
           aws_region: ${{ github.event.inputs.aws_region || 'us-east-1' }}
