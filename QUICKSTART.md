@@ -14,7 +14,15 @@ Get the Claim Status API up and running in 5 minutes.
 ### 1️⃣ Deploy Infrastructure (3 min)
 
 ```bash
-cd iac/terraform
+cd iac/terraform/core
+
+terraform init
+terraform apply -auto-approve
+
+# Capture core outputs for platform inputs
+terraform output -json > core-outputs.json
+
+cd ../platform
 
 terraform init
 terraform apply -auto-approve
@@ -115,7 +123,10 @@ kubectl delete deployment -n materclaims claim-status-api
 kubectl delete svc -n materclaims claim-status-api
 
 # Destroy AWS infrastructure
-cd iac/terraform
+cd iac/terraform/platform
+terraform destroy -auto-approve
+
+cd ../core
 terraform destroy -auto-approve
 ```
 

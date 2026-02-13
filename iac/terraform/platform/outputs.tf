@@ -24,36 +24,14 @@ output "cluster_certificate_authority_data" {
   sensitive   = true
 }
 
-output "vpc_id" {
-  description = "VPC ID"
-  value       = module.vpc.vpc_id
-}
-
-output "public_subnets" {
-  description = "List of public subnet IDs"
-  value       = module.vpc.public_subnets
-}
-
 output "ecr_repositories" {
   description = "ECR repository URLs"
   value       = { for k, v in aws_ecr_repository.services : k => v.repository_url }
 }
 
-
-
-output "dynamodb_table_name" {
-  description = "Name of the DynamoDB table"
-  value       = aws_dynamodb_table.claims.name
-}
-
 output "app_service_account_role_arn" {
   description = "ARN of the IAM role for application service account"
   value       = aws_iam_role.app_service_account.arn
-}
-
-output "claim_notes_bucket_name" {
-  description = "Name of the S3 bucket for claim notes"
-  value       = aws_s3_bucket.claim_notes.id
 }
 
 output "eks_full_admin_access_policy_arn" {

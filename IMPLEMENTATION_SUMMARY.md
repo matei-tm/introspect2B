@@ -266,8 +266,11 @@ claim-status-api/
 1. **Deploy Infrastructure**
 
    ```bash
-   cd iac/terraform
-   terraform apply
+  cd iac/terraform/core
+  terraform apply
+
+  cd ../platform
+  terraform apply
    ```
 
 2. **Build & Push Image**

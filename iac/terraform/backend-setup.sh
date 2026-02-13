@@ -44,15 +44,28 @@ aws dynamodb create-table \
   --region "$REGION"
 
 echo ""
-echo "✅ Backend resources created successfully!"
+echo "Backend resources created successfully!"
 echo ""
-echo "Add this configuration to your iac/terraform/main.tf:"
+echo "Add these configurations to your Terraform modules:"
 echo ""
 cat <<EOF
 terraform {
   backend "s3" {
     bucket         = "$BUCKET_NAME"
-    key            = "terraform.tfstate"
+    key            = "core/terraform.tfstate"
+    region         = "$REGION"
+    dynamodb_table = "$DYNAMODB_TABLE"
+    encrypt        = true
+  }
+}
+EOF
+
+cat <<EOF
+
+terraform {
+  backend "s3" {
+    bucket         = "$BUCKET_NAME"
+    key            = "platform/terraform.tfstate"
     region         = "$REGION"
     dynamodb_table = "$DYNAMODB_TABLE"
     encrypt        = true

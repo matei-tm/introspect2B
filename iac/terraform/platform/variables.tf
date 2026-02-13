@@ -16,24 +16,6 @@ variable "environment" {
   default     = "dev"
 }
 
-variable "vpc_cidr" {
-  description = "CIDR block for VPC"
-  type        = string
-  default     = "10.0.0.0/16"
-}
-
-variable "public_subnet_1_cidr" {
-  description = "CIDR block for public subnet 1"
-  type        = string
-  default     = "10.0.1.0/24"
-}
-
-variable "public_subnet_2_cidr" {
-  description = "CIDR block for public subnet 2"
-  type        = string
-  default     = "10.0.2.0/24"
-}
-
 variable "kubernetes_version" {
   description = "Kubernetes version for EKS cluster"
   type        = string
@@ -76,26 +58,29 @@ variable "ecr_repository_names" {
   default     = ["claim-status-api"]
 }
 
-variable "dynamodb_table_name" {
-  description = "DynamoDB table name for state store"
-  type        = string
-  default     = "claims"
-}
-
 variable "attach_ec2_policy_to_current_user" {
   description = "Whether to attach EC2InstanceTypeAccess policy to the current IAM user"
   type        = bool
   default     = true
 }
 
-variable "attach_security_services_policy_to_current_user" {
-  description = "Whether to attach Inspector/Security Hub permissions to the current IAM user"
-  type        = bool
-  default     = false
-}
-
 variable "codepipeline_stack_name" {
   description = "Name of the CloudFormation stack containing the CodePipeline and CodeBuild roles"
   type        = string
   default     = "introspect2b-codepipeline-v2"
+}
+
+variable "vpc_id" {
+  description = "VPC ID from the core module"
+  type        = string
+}
+
+variable "public_subnet_ids" {
+  description = "Public subnet IDs from the core module"
+  type        = list(string)
+}
+
+variable "claim_notes_bucket_arn" {
+  description = "S3 bucket ARN for claim notes from the core module"
+  type        = string
 }

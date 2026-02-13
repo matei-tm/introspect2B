@@ -24,14 +24,13 @@ on:
 env:
   AWS_REGION: us-east-1
   TERRAFORM_VERSION: 1.6.0
+  TF_CORE_DIR: iac/terraform/core
+  TF_PLATFORM_DIR: iac/terraform/platform
 
 jobs:
   terraform:
     name: Terraform ${{ github.event.inputs.action || 'plan' }}
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: iac/terraform
     
     permissions:
       id-token: write
@@ -56,25 +55,49 @@ jobs:
 
       - name: Terraform Format Check
         id: fmt
-        run: terraform fmt -check -recursive
+        run: terraform fmt -check -recursive iac/terraform
         continue-on-error: true
 
-      - name: Terraform Init
-        id: init
-        run: terraform init
+      - name: Terraform Init (Core)
+        id: init-core
+        run: terraform -chdir=${{ env.TF_CORE_DIR }} init
 
-      - name: Terraform Validate
-        id: validate
-        run: terraform validate -no-color
+      - name: Terraform Validate (Core)
+        id: validate-core
+        run: terraform -chdir=${{ env.TF_CORE_DIR }} validate -no-color
 
-      - name: Terraform Plan
-        id: plan
+      - name: Terraform Init (Platform)
+        id: init-platform
+        run: terraform -chdir=${{ env.TF_PLATFORM_DIR }} init
+
+      - name: Terraform Validate (Platform)
+        id: validate-platform
+        run: terraform -chdir=${{ env.TF_PLATFORM_DIR }} validate -no-color
+
+      - name: Load core outputs for platform
+        id: core-outputs
+        run: |
+          set -euo pipefail
+          terraform -chdir=${{ env.TF_CORE_DIR }} output -json > core-outputs.json
+          echo "vpc_id=$(jq -r '.vpc_id.value' core-outputs.json)" >> $GITHUB_OUTPUT
+          echo "public_subnet_ids=$(jq -r '.public_subnets.value | join(",")' core-outputs.json)" >> $GITHUB_OUTPUT
+          echo "claim_notes_bucket_arn=$(jq -r '.claim_notes_bucket_arn.value' core-outputs.json)" >> $GITHUB_OUTPUT
+
+      - name: Upload core outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-outputs
+          path: core-outputs.json
+          retention-days: 7
+
+      - name: Terraform Plan (Core)
+        id: plan-core
         if: github.event.inputs.action != 'destroy'
         run: |
           set +e
-          terraform plan -no-color -input=false -out=tfplan 2>&1 | tee plan.log
+          terraform -chdir=${{ env.TF_CORE_DIR }} plan -no-color -input=false -out=tfplan-core 2>&1 | tee plan-core.log
           PLAN_EXIT_CODE=${PIPESTATUS[0]}
-          echo "exit_code=$PLAN_EXIT_CODE" >> $GITHUB_OUTPUT
+          echo "plan_exit_code=$PLAN_EXIT_CODE" >> $GITHUB_OUTPUT
           
           if [ $PLAN_EXIT_CODE -eq 0 ]; then
             echo "✅ Plan succeeded with no changes"
@@ -86,17 +109,48 @@ jobs:
             echo "❌ Plan failed with exit code $PLAN_EXIT_CODE"
             echo ""
             echo "=== Last 100 lines of plan output ==="
-            tail -100 plan.log
+            tail -100 plan-core.log
             exit 1
           fi
         continue-on-error: true
 
-      - name: Terraform Plan (Destroy)
-        id: plan-destroy
+      - name: Terraform Plan (Platform)
+        id: plan-platform
+        if: github.event.inputs.action != 'destroy'
+        run: |
+          set +e
+          VPC_ID="${{ steps.core-outputs.outputs.vpc_id }}"
+          PUBLIC_SUBNET_IDS="${{ steps.core-outputs.outputs.public_subnet_ids }}"
+          CLAIM_NOTES_BUCKET_ARN="${{ steps.core-outputs.outputs.claim_notes_bucket_arn }}"
+          terraform -chdir=${{ env.TF_PLATFORM_DIR }} plan -no-color -input=false \
+            -var "vpc_id=$VPC_ID" \
+            -var "public_subnet_ids=[$(echo "$PUBLIC_SUBNET_IDS" | sed 's/[^,]*/"&"/g')]" \
+            -var "claim_notes_bucket_arn=$CLAIM_NOTES_BUCKET_ARN" \
+            -out=tfplan-platform 2>&1 | tee plan-platform.log
+          PLAN_EXIT_CODE=${PIPESTATUS[0]}
+          echo "plan_exit_code=$PLAN_EXIT_CODE" >> $GITHUB_OUTPUT
+
+          if [ $PLAN_EXIT_CODE -eq 0 ]; then
+            echo "Plan succeeded with no changes"
+            exit 0
+          elif [ $PLAN_EXIT_CODE -eq 2 ]; then
+            echo "Plan succeeded with changes"
+            exit 0
+          else
+            echo "Plan failed with exit code $PLAN_EXIT_CODE"
+            echo ""
+            echo "=== Last 100 lines of plan output ==="
+            tail -100 plan-platform.log
+            exit 1
+          fi
+        continue-on-error: true
+
+      - name: Terraform Plan (Destroy Core)
+        id: plan-destroy-core
         if: github.event.inputs.action == 'destroy'
         run: |
           set -o pipefail
-          terraform plan -destroy -no-color -input=false 2>&1 | tee plan-destroy.log
+          terraform -chdir=${{ env.TF_CORE_DIR }} plan -destroy -no-color -input=false 2>&1 | tee plan-destroy-core.log
           PLAN_EXIT_CODE=${PIPESTATUS[0]}
           echo "plan_exit_code=$PLAN_EXIT_CODE" >> $GITHUB_OUTPUT
           
@@ -110,23 +164,53 @@ jobs:
             echo "❌ Destroy plan failed with exit code $PLAN_EXIT_CODE"
             echo ""
             echo "=== Last 100 lines of destroy plan output ==="
-            tail -100 plan-destroy.log
+            tail -100 plan-destroy-core.log
+            exit 1
+          fi
+        continue-on-error: true
+
+      - name: Terraform Plan (Destroy Platform)
+        id: plan-destroy-platform
+        if: github.event.inputs.action == 'destroy'
+        run: |
+          set -o pipefail
+          VPC_ID="${{ steps.core-outputs.outputs.vpc_id }}"
+          PUBLIC_SUBNET_IDS="${{ steps.core-outputs.outputs.public_subnet_ids }}"
+          CLAIM_NOTES_BUCKET_ARN="${{ steps.core-outputs.outputs.claim_notes_bucket_arn }}"
+          terraform -chdir=${{ env.TF_PLATFORM_DIR }} plan -destroy -no-color -input=false \
+            -var "vpc_id=$VPC_ID" \
+            -var "public_subnet_ids=[$(echo "$PUBLIC_SUBNET_IDS" | sed 's/[^,]*/"&"/g')]" \
+            -var "claim_notes_bucket_arn=$CLAIM_NOTES_BUCKET_ARN" 2>&1 | tee plan-destroy-platform.log
+          PLAN_EXIT_CODE=${PIPESTATUS[0]}
+          echo "plan_exit_code=$PLAN_EXIT_CODE" >> $GITHUB_OUTPUT
+
+          if [ $PLAN_EXIT_CODE -eq 0 ]; then
+            echo "Destroy plan succeeded with no changes"
+            exit 0
+          elif [ $PLAN_EXIT_CODE -eq 2 ]; then
+            echo "Destroy plan succeeded with changes"
+            exit 0
+          else
+            echo "Destroy plan failed with exit code $PLAN_EXIT_CODE"
+            echo ""
+            echo "=== Last 100 lines of destroy plan output ==="
+            tail -100 plan-destroy-platform.log
             exit 1
           fi
         continue-on-error: true
 
       - name: Comment PR with Terraform Plan
         uses: actions/github-script@v7
-        if: github.event_name == 'pull_request' && (steps.plan.outputs.exitcode == 0 || steps.plan-destroy.outputs.exitcode == 0)
+        if: github.event_name == 'pull_request' && (steps.plan-core.outputs.plan_exit_code == '0' || steps.plan-core.outputs.plan_exit_code == '2' || steps.plan-destroy-core.outputs.plan_exit_code == '0' || steps.plan-destroy-core.outputs.plan_exit_code == '2')
         env:
-          PLAN: "${{ steps.plan.outputs.stdout || steps.plan-destroy.outputs.stdout }}"
+          PLAN: "${{ steps.plan-core.outputs.stdout || steps.plan-destroy-core.outputs.stdout }}"
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
-            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
-            #### Terraform Plan 📖\`${{ steps.plan.outcome || steps.plan-destroy.outcome }}\`
+            const output = `#### Terraform Format and Style \`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization \`${{ steps.init-core.outcome }}\` / \`${{ steps.init-platform.outcome }}\`
+            #### Terraform Validation \`${{ steps.validate-core.outcome }}\` / \`${{ steps.validate-platform.outcome }}\`
+            #### Terraform Plan \`${{ steps.plan-core.outcome || steps.plan-destroy-core.outcome }}\` / \`${{ steps.plan-platform.outcome || steps.plan-destroy-platform.outcome }}\`
 
             <details><summary>Show Plan</summary>
 
@@ -149,17 +233,39 @@ jobs:
         if: |
           (github.event.inputs.action == 'apply' || 
            (github.event_name == 'push' && github.ref == 'refs/heads/main')) &&
-          (steps.plan.outputs.plan_exit_code == '0' || steps.plan.outputs.plan_exit_code == '2')
+          (steps.plan-core.outputs.plan_exit_code == '0' || steps.plan-core.outputs.plan_exit_code == '2') &&
+          (steps.plan-platform.outputs.plan_exit_code == '0' || steps.plan-platform.outputs.plan_exit_code == '2')
         run: |
           set -x
-          terraform apply -auto-approve -input=false 2>&1 | tee apply.log
+          terraform -chdir=${{ env.TF_CORE_DIR }} apply -auto-approve -input=false 2>&1 | tee apply-core.log
+          APPLY_EXIT_CODE=${PIPESTATUS[0]}
+          if [ $APPLY_EXIT_CODE -ne 0 ]; then
+            exit $APPLY_EXIT_CODE
+          fi
+          VPC_ID="${{ steps.core-outputs.outputs.vpc_id }}"
+          PUBLIC_SUBNET_IDS="${{ steps.core-outputs.outputs.public_subnet_ids }}"
+          CLAIM_NOTES_BUCKET_ARN="${{ steps.core-outputs.outputs.claim_notes_bucket_arn }}"
+          terraform -chdir=${{ env.TF_PLATFORM_DIR }} apply -auto-approve -input=false \
+            -var "vpc_id=$VPC_ID" \
+            -var "public_subnet_ids=[$(echo "$PUBLIC_SUBNET_IDS" | sed 's/[^,]*/"&"/g')]" \
+            -var "claim_notes_bucket_arn=$CLAIM_NOTES_BUCKET_ARN" 2>&1 | tee apply-platform.log
           exit ${PIPESTATUS[0]}
 
       - name: Terraform Destroy
         if: |
           github.event.inputs.action == 'destroy' && 
-          (steps.plan-destroy.outputs.plan_exit_code == '0' || steps.plan-destroy.outputs.plan_exit_code == '2')
-        run: terraform destroy -auto-approve -input=false
+          (steps.plan-destroy-core.outputs.plan_exit_code == '0' || steps.plan-destroy-core.outputs.plan_exit_code == '2') &&
+          (steps.plan-destroy-platform.outputs.plan_exit_code == '0' || steps.plan-destroy-platform.outputs.plan_exit_code == '2')
+        run: |
+          set -euo pipefail
+          VPC_ID="${{ steps.core-outputs.outputs.vpc_id }}"
+          PUBLIC_SUBNET_IDS="${{ steps.core-outputs.outputs.public_subnet_ids }}"
+          CLAIM_NOTES_BUCKET_ARN="${{ steps.core-outputs.outputs.claim_notes_bucket_arn }}"
+          terraform -chdir=${{ env.TF_PLATFORM_DIR }} destroy -auto-approve -input=false \
+            -var "vpc_id=$VPC_ID" \
+            -var "public_subnet_ids=[$(echo "$PUBLIC_SUBNET_IDS" | sed 's/[^,]*/"&"/g')]" \
+            -var "claim_notes_bucket_arn=$CLAIM_NOTES_BUCKET_ARN"
+          terraform -chdir=${{ env.TF_CORE_DIR }} destroy -auto-approve -input=false
 
       - name: Update kubeconfig
         if: |
@@ -193,7 +299,7 @@ jobs:
         if: |
           github.event.inputs.action == 'apply' || 
           (github.event_name == 'push' && github.ref == 'refs/heads/main')
-        run: terraform output -json
+        run: terraform -chdir=${{ env.TF_PLATFORM_DIR }} output -json
 
       - name: Create summary
         if: always()
@@ -206,9 +312,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Results" >> $GITHUB_STEP_SUMMARY
           echo "- Format: ${{ steps.fmt.outcome }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Init: ${{ steps.init.outcome }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Validate: ${{ steps.validate.outcome }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Plan: ${{ steps.plan.outcome || steps.plan-destroy.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Init: ${{ steps.init-core.outcome }} / ${{ steps.init-platform.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Validate: ${{ steps.validate-core.outcome }} / ${{ steps.validate-platform.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Plan: ${{ steps.plan-core.outcome || steps.plan-destroy-core.outcome }} / ${{ steps.plan-platform.outcome || steps.plan-destroy-platform.outcome }}" >> $GITHUB_STEP_SUMMARY
           if [[ "${{ github.event.inputs.action }}" == "apply" ]] || [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "- Apply: ✅ Completed" >> $GITHUB_STEP_SUMMARY
           elif [[ "${{ github.event.inputs.action }}" == "destroy" ]]; then

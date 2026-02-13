@@ -35,15 +35,29 @@ flowchart TD
 ### Step 1: Prepare Infrastructure with Terraform
 
 ```bash
-cd iac/terraform
+cd iac/terraform/core
 
-# Initialize Terraform
+# Initialize Terraform (core)
 terraform init
 
 # Review changes
 terraform plan
 
-# Apply configuration (creates EKS, DynamoDB, S3, IAM roles)
+# Apply configuration (VPC, DynamoDB, S3, AWS Config)
+terraform apply
+
+# Capture core outputs for the platform module
+terraform output -json > core-outputs.json
+
+cd ../platform
+
+# Initialize Terraform (platform)
+terraform init
+
+# Review changes
+terraform plan
+
+# Apply configuration (EKS, IAM, ECR, CloudWatch)
 terraform apply
 ```
 
@@ -259,7 +273,10 @@ kubectl delete deployment -n materclaims claim-status-api
 kubectl delete svc -n materclaims claim-status-api
 
 # Destroy Terraform resources
-cd iac/terraform
+cd iac/terraform/platform
+terraform destroy
+
+cd ../core
 terraform destroy
 ```
 

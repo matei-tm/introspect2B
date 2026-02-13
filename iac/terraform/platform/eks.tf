@@ -6,8 +6,8 @@ module "eks" {
   cluster_name    = var.cluster_name
   cluster_version = var.kubernetes_version
 
-  vpc_id                         = module.vpc.vpc_id
-  subnet_ids                     = module.vpc.public_subnets
+  vpc_id                         = var.vpc_id
+  subnet_ids                     = var.public_subnet_ids
   cluster_endpoint_public_access = true
 
   # Disable KMS encryption to avoid permission issues in lab environment
@@ -25,7 +25,7 @@ module "eks" {
     main = {
       name           = "eks-lt-ng-public"
       instance_types = [var.node_instance_type]
-      
+
       min_size     = var.node_min_size
       max_size     = var.node_max_size
       desired_size = var.node_desired_capacity
@@ -82,19 +82,19 @@ data "aws_cloudformation_stack" "codepipeline" {
 
 # Create EKS access entry for current IAM user
 resource "aws_eks_access_entry" "admin_user" {
-  cluster_name      = module.eks.cluster_name
-  principal_arn     = data.aws_caller_identity.current.arn
-  type              = "STANDARD"
-  
+  cluster_name  = module.eks.cluster_name
+  principal_arn = data.aws_caller_identity.current.arn
+  type          = "STANDARD"
+
   depends_on = [module.eks]
 }
 
 # Create EKS access entry for CodeBuild service role
 resource "aws_eks_access_entry" "codebuild" {
-  cluster_name      = module.eks.cluster_name
-  principal_arn     = data.aws_cloudformation_stack.codepipeline.outputs["CodeBuildServiceRoleArn"]
-  type              = "STANDARD"
-  
+  cluster_name  = module.eks.cluster_name
+  principal_arn = data.aws_cloudformation_stack.codepipeline.outputs["CodeBuildServiceRoleArn"]
+  type          = "STANDARD"
+
   depends_on = [module.eks]
 }
 
@@ -144,4 +144,3 @@ resource "null_resource" "update_kubeconfig" {
     access_policy    = aws_eks_access_policy_association.admin_user_policy.id
   }
 }
-

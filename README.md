@@ -116,11 +116,14 @@ curl http://localhost:8080/api/claims/CLM-2024-001
 ### 3. Deploy to EKS
 
 ```bash
-# Initialize Terraform
-cd iac/terraform
+# Initialize Terraform (core)
+cd iac/terraform/core
 terraform init
+terraform apply
 
-# Apply infrastructure
+# Apply platform (use outputs from core for VPC IDs and claim notes bucket)
+cd ../platform
+terraform init
 terraform apply
 
 # Deploy service
@@ -317,14 +320,8 @@ introspect2B/
 │   └── Program.cs
 ├── iac/
 │   ├── terraform/                  # Terraform IaC
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   ├── eks.tf
-│   │   ├── iam.tf
-│   │   ├── aws-resources.tf
-│   │   ├── kubernetes.tf
-│   │   ├── helm.tf
-│   │   └── outputs.tf
+│   │   ├── core/
+│   │   └── platform/
 │   └── cloudformation/             # CFT templates
 │       ├── api-gateway-template.yaml
 │       └── pipeline.yaml
@@ -412,7 +409,12 @@ introspect2B/
 
 ```bash
 # 1. Initialize infrastructure
-cd iac/terraform
+cd iac/terraform/core
+terraform init
+terraform plan
+terraform apply
+
+cd ../platform
 terraform init
 terraform plan
 terraform apply

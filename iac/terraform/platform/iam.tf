@@ -104,28 +104,6 @@ resource "aws_iam_policy" "ec2_instance_type_access" {
   }
 }
 
-# IAM Policy for enabling security services (Inspector, Security Hub)
-data "aws_iam_policy_document" "security_services_access" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "inspector2:*",
-      "securityhub:*"
-    ]
-    resources = ["*"]
-  }
-}
-
-resource "aws_iam_policy" "security_services_access" {
-  name        = "SecurityServicesAccess"
-  description = "Permissions to administer Amazon Inspector and AWS Security Hub"
-  policy      = data.aws_iam_policy_document.security_services_access.json
-
-  tags = {
-    Name = "SecurityServicesAccess"
-  }
-}
-
 # IAM Policy for Application Service Account
 data "aws_iam_policy_document" "app_service_account" {
   statement {
@@ -154,8 +132,8 @@ data "aws_iam_policy_document" "app_service_account" {
       "s3:ListBucket"
     ]
     resources = [
-      aws_s3_bucket.claim_notes.arn,
-      "${aws_s3_bucket.claim_notes.arn}/*"
+      var.claim_notes_bucket_arn,
+      "${var.claim_notes_bucket_arn}/*"
     ]
   }
 
@@ -227,12 +205,4 @@ resource "aws_iam_user_policy_attachment" "ec2_instance_type_access" {
 
   user       = local.caller_user_name
   policy_arn = aws_iam_policy.ec2_instance_type_access.arn
-}
-
-# Attach security services policy to current user (optional)
-resource "aws_iam_user_policy_attachment" "security_services_access" {
-  count = var.attach_security_services_policy_to_current_user ? 1 : 0
-
-  user       = local.caller_user_name
-  policy_arn = aws_iam_policy.security_services_access.arn
 }

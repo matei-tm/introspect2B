@@ -1,0 +1,30 @@
+# AWS Configuration
+aws_region   = "us-east-1"
+cluster_name = "materclaims-cluster"
+environment  = "dev"
+
+# EKS Configuration
+kubernetes_version     = "1.31"
+node_instance_type     = "t3.medium"
+node_desired_capacity  = 2
+node_min_size          = 1
+node_max_size          = 3
+
+# Application Configuration
+namespace = "materclaims"
+
+# ECR Repositories
+ecr_repository_names = ["claim-status-api"]
+
+# IAM Configuration
+attach_ec2_policy_to_current_user = true
+
+# CodePipeline Stack
+codepipeline_stack_name = "introspect2b-codepipeline-v2"
+
+# Core outputs
+vpc_id = "vpc-xxxxxxxx"
+public_subnet_ids = ["subnet-aaaaaaa", "subnet-bbbbbbb"]
+
+# Claim notes bucket (from core)
+claim_notes_bucket_arn = "arn:aws:s3:::claim-notes-123456789012"

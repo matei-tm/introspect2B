@@ -193,7 +193,7 @@ resource "null_resource" "cloudwatch_rbac" {
       metadata:
         name: fluent-bit-role
       rules:
-      - apiGroups: [""]
+      - apiGroups: ["" ]
         resources: ["namespaces", "pods", "pods/logs"]
         verbs: ["get", "list", "watch"]
       ---
