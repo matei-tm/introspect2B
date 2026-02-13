@@ -48,6 +48,22 @@ jobs:
           site_user: ${{ secrets.SITE_USER }}
           site_password: ${{ secrets.SITE_PASSWORD }}
 
+  apigw-cleanup:
+    if: ${{ always() && (needs.start-lab.result == 'success' || needs.start-lab.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    needs: start-lab
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/apigw-cleanup
+        with:
+          aws_region: ${{ github.event.inputs.aws_region || 'us-east-1' }}
+          stack_name: ${{ github.event.inputs.apigw_stack_name || 'claim-status-api-apigw' }}
+          role_arn: ${{ github.event.inputs.apigw_role_arn || '' }}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+
+
   setup-terraform-backend:
     runs-on: ubuntu-latest
     needs: apigw-cleanup
@@ -76,17 +92,3 @@ jobs:
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
 
-  apigw-cleanup:
-    if: ${{ always() && (needs.start-lab.result == 'success' || needs.start-lab.result == 'skipped') }}
-    runs-on: ubuntu-latest
-    needs: start-lab
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/apigw-cleanup
-        with:
-          aws_region: ${{ github.event.inputs.aws_region || 'us-east-1' }}
-          stack_name: ${{ github.event.inputs.apigw_stack_name || 'claim-status-api-apigw' }}
-          role_arn: ${{ github.event.inputs.apigw_role_arn || '' }}
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
