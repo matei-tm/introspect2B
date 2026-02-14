@@ -145,7 +145,7 @@ jobs:
               body: output
             })
 
-      - name: Remove namespace from state (migration)
+      - name: Remove resources from state (migration to addon-managed)
         if: |
           (github.event.inputs.action == 'apply' || 
            (github.event_name == 'push' && github.ref == 'refs/heads/main'))
@@ -154,8 +154,6 @@ jobs:
           if terraform state list | grep -q "kubernetes_namespace.amazon_cloudwatch"; then
             echo "Found kubernetes_namespace.amazon_cloudwatch in state - removing it (now a data source)"
             terraform state rm kubernetes_namespace.amazon_cloudwatch || true
-          else
-            echo "kubernetes_namespace.amazon_cloudwatch not in state - skipping"
           fi
           
           # Remove CloudWatch service accounts if they exist (now data sources)
@@ -173,6 +171,30 @@ jobs:
           if terraform state list | grep -q "kubernetes_config_map.fluent_bit_config"; then
             echo "Found kubernetes_config_map.fluent_bit_config in state - removing it (now a data source)"
             terraform state rm kubernetes_config_map.fluent_bit_config || true
+          fi
+          
+          # Remove CloudWatch Agent DaemonSet (now managed by addon)
+          if terraform state list | grep -q "kubernetes_daemonset.cloudwatch_agent"; then
+            echo "Found kubernetes_daemonset.cloudwatch_agent in state - removing it (now managed by addon)"
+            terraform state rm kubernetes_daemonset.cloudwatch_agent || true
+          fi
+          
+          # Remove Fluent Bit DaemonSet (now managed by addon)
+          if terraform state list | grep -q "kubernetes_daemonset.fluent_bit"; then
+            echo "Found kubernetes_daemonset.fluent_bit in state - removing it (now managed by addon)"
+            terraform state rm kubernetes_daemonset.fluent_bit || true
+          fi
+          
+          # Remove CloudWatch Agent ConfigMap (now managed by addon)
+          if terraform state list | grep -q "kubernetes_config_map.cloudwatch_agent"; then
+            echo "Found kubernetes_config_map.cloudwatch_agent in state - removing it (now managed by addon)"
+            terraform state rm kubernetes_config_map.cloudwatch_agent || true
+          fi
+          
+          # Remove RBAC null_resource (now managed by addon)
+          if terraform state list | grep -q "null_resource.cloudwatch_rbac"; then
+            echo "Found null_resource.cloudwatch_rbac in state - removing it (now managed by addon)"
+            terraform state rm null_resource.cloudwatch_rbac || true
           fi
         continue-on-error: true
 
