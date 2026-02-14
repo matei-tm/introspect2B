@@ -122,26 +122,26 @@ data "kubernetes_namespace" "amazon_cloudwatch" {
 resource "kubernetes_service_account" "cloudwatch_agent" {
   metadata {
     name      = "cloudwatch-agent"
-    namespace = kubernetes_namespace.amazon_cloudwatch.metadata[0].name
+    namespace = data.kubernetes_namespace.amazon_cloudwatch.metadata[0].name
     annotations = {
       "eks.amazonaws.com/role-arn" = aws_iam_role.cloudwatch_agent.arn
     }
   }
 
-  depends_on = [kubernetes_namespace.amazon_cloudwatch]
+  depends_on = [data.kubernetes_namespace.amazon_cloudwatch]
 }
 
 # Service Account for Fluent Bit
 resource "kubernetes_service_account" "fluent_bit" {
   metadata {
     name      = "fluent-bit"
-    namespace = kubernetes_namespace.amazon_cloudwatch.metadata[0].name
+    namespace = data.kubernetes_namespace.amazon_cloudwatch.metadata[0].name
     annotations = {
       "eks.amazonaws.com/role-arn" = aws_iam_role.fluent_bit.arn
     }
   }
 
-  depends_on = [kubernetes_namespace.amazon_cloudwatch]
+  depends_on = [data.kubernetes_namespace.amazon_cloudwatch]
 }
 
 # Apply RBAC using kubectl to avoid authorization issues
@@ -226,7 +226,7 @@ resource "null_resource" "cloudwatch_rbac" {
 resource "kubernetes_config_map" "cloudwatch_agent" {
   metadata {
     name      = "cwagentconfig"
-    namespace = kubernetes_namespace.amazon_cloudwatch.metadata[0].name
+    namespace = data.kubernetes_namespace.amazon_cloudwatch.metadata[0].name
   }
 
   data = {
@@ -243,14 +243,14 @@ resource "kubernetes_config_map" "cloudwatch_agent" {
     })
   }
 
-  depends_on = [kubernetes_namespace.amazon_cloudwatch]
+  depends_on = [data.kubernetes_namespace.amazon_cloudwatch]
 }
 
 # ConfigMap for Fluent Bit
 resource "kubernetes_config_map" "fluent_bit_config" {
   metadata {
     name      = "fluent-bit-config"
-    namespace = kubernetes_namespace.amazon_cloudwatch.metadata[0].name
+    namespace = data.kubernetes_namespace.amazon_cloudwatch.metadata[0].name
   }
 
   data = {
@@ -302,14 +302,14 @@ resource "kubernetes_config_map" "fluent_bit_config" {
     EOT
   }
 
-  depends_on = [kubernetes_namespace.amazon_cloudwatch]
+  depends_on = [data.kubernetes_namespace.amazon_cloudwatch]
 }
 
 # DaemonSet for CloudWatch Agent
 resource "kubernetes_daemonset" "cloudwatch_agent" {
   metadata {
     name      = "cloudwatch-agent"
-    namespace = kubernetes_namespace.amazon_cloudwatch.metadata[0].name
+    namespace = data.kubernetes_namespace.amazon_cloudwatch.metadata[0].name
   }
 
   spec {
@@ -464,7 +464,7 @@ resource "kubernetes_daemonset" "cloudwatch_agent" {
 resource "kubernetes_daemonset" "fluent_bit" {
   metadata {
     name      = "fluent-bit"
-    namespace = kubernetes_namespace.amazon_cloudwatch.metadata[0].name
+    namespace = data.kubernetes_namespace.amazon_cloudwatch.metadata[0].name
     labels = {
       k8s-app                         = "fluent-bit"
       version                         = "v1"
