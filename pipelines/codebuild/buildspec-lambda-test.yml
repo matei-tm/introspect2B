@@ -1,0 +1,58 @@
+version: 0.2
+
+env:
+  variables:
+    PYTHONPATH: /codebuild/output/src*/src
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - echo "Installing Python dependencies..."
+      - pip install --upgrade pip
+      - pip install -r src/intelligent-autoscaler/requirements.txt
+      - pip install -r src/intelligent-autoscaler.Tests/requirements.txt
+
+  pre_build:
+    commands:
+      - echo "Setting up test environment..."
+      - export PYTHONPATH="${PYTHONPATH}:${CODEBUILD_SRC_DIR}/src/intelligent-autoscaler"
+      - echo "PYTHONPATH=$PYTHONPATH"
+      
+  build:
+    commands:
+      - echo "Running unit tests for intelligent autoscaler..."
+      - cd src/intelligent-autoscaler.Tests
+      - pytest test_lambda_function.py -v --cov=../intelligent-autoscaler --cov-report=term --cov-report=xml:coverage.xml --cov-report=html:htmlcov --junitxml=test-results.xml
+      - cd ../..
+
+  post_build:
+    commands:
+      - echo "Test execution completed"
+      - |
+        if [ -f src/intelligent-autoscaler.Tests/coverage.xml ]; then
+          echo "Coverage report generated"
+          cat src/intelligent-autoscaler.Tests/coverage.xml
+        fi
+
+artifacts:
+  files:
+    - 'src/intelligent-autoscaler.Tests/test-results.xml'
+    - 'src/intelligent-autoscaler.Tests/coverage.xml'
+    - 'src/intelligent-autoscaler.Tests/htmlcov/**/*'
+  name: LambdaTestArtifact
+
+reports:
+  LambdaTestReport:
+    files:
+      - 'src/intelligent-autoscaler.Tests/test-results.xml'
+    file-format: 'JUNITXML'
+  LambdaCoverageReport:
+    files:
+      - 'src/intelligent-autoscaler.Tests/coverage.xml'
+    file-format: 'COBERTURAXML'
+
+cache:
+  paths:
+    - '/root/.cache/pip/**/*'

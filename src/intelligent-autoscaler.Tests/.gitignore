@@ -1,0 +1,32 @@
+# Python Test Artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyc
+
+# Testing
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+test-results.xml
+*.cover
+.hypothesis/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
