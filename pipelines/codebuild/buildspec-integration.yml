@@ -25,6 +25,19 @@ phases:
       - |
         # Get API Gateway endpoint and API Key ID from CloudFormation stack outputs
         echo "Querying CloudFormation stack:" ${API_GATEWAY_STACK_NAME} "in region:" ${AWS_REGION}
+        
+        # First verify the stack exists
+        if ! aws cloudformation describe-stacks \
+          --stack-name "${API_GATEWAY_STACK_NAME}" \
+          --region "${AWS_REGION}" \
+          --no-cli-pager \
+          --color off > /dev/null 2>&1; then
+          echo "ERROR: CloudFormation stack '${API_GATEWAY_STACK_NAME}' not found in region ${AWS_REGION}"
+          echo "Please ensure the API Gateway stack has been deployed first."
+          exit 1
+        fi
+        
+        # Retrieve stack outputs
         STACK_OUTPUTS=$(aws cloudformation describe-stacks \
           --stack-name "${API_GATEWAY_STACK_NAME}" \
           --region "${AWS_REGION}" \
@@ -33,17 +46,28 @@ phases:
           --no-cli-pager \
           --color off)
         
-        echo "Stack outputs retrieved"
+        echo "Stack outputs retrieved:"
+        echo "$STACK_OUTPUTS" | jq .
         
+        # Parse outputs
         export BASE_URL=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="ApiEndpoint") | .OutputValue' | tr -d '\n')
-        API_KEY_ID=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="ApiKeyId") | .OutputValue')
+        API_KEY_ID=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="ApiKeyId") | .OutputValue' | tr -d '\n')
         
         echo "Parsed BASE_URL:" ${BASE_URL}
         echo "Parsed API_KEY_ID:" ${API_KEY_ID}
         
         # Validate we got the outputs before trying to fetch API key
-        test -n "$BASE_URL" || { echo "ERROR: Could not retrieve API Gateway endpoint from stack outputs"; exit 1; }
-        test -n "$API_KEY_ID" || { echo "ERROR: Could not retrieve API Key ID from stack outputs"; exit 1; }
+        if [ -z "$BASE_URL" ] || [ "$BASE_URL" = "null" ]; then
+          echo "ERROR: Could not retrieve API Gateway endpoint from stack outputs"
+          echo "Expected output key 'ApiEndpoint' not found in stack"
+          exit 1
+        fi
+        
+        if [ -z "$API_KEY_ID" ] || [ "$API_KEY_ID" = "null" ]; then
+          echo "ERROR: Could not retrieve API Key ID from stack outputs"
+          echo "Expected output key 'ApiKeyId' not found in stack"
+          exit 1
+        fi
         
         # Retrieve the actual API key value
         echo "Fetching API key value for:" ${API_KEY_ID}
@@ -54,14 +78,24 @@ phases:
           --query 'value' \
           --output text \
           --no-cli-pager \
-          --color off)
+          --color off 2>&1)
+        
+        # Check if API key retrieval was successful
+        if [ $? -ne 0 ]; then
+          echo "ERROR: Failed to retrieve API key value"
+          echo "$API_KEY"
+          exit 1
+        fi
         
         echo "API Gateway Endpoint: ${BASE_URL}"
         echo "API Key ID: ${API_KEY_ID}"
         echo "API Key retrieved (${#API_KEY} characters)"
         
         # Final validation
-        test -n "$API_KEY" || { echo "ERROR: Could not retrieve API key value"; exit 1; }
+        if [ -z "$API_KEY" ] || [ "$API_KEY" = "null" ] || [ "$API_KEY" = "None" ]; then
+          echo "ERROR: Could not retrieve API key value"
+          exit 1
+        fi
   build:
     commands:
       - echo "Running integration tests..."
