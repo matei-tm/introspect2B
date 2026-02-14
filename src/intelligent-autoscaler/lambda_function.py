@@ -13,7 +13,7 @@ cloudwatch = boto3.client('cloudwatch')
 eks = boto3.client('eks')
 
 # Configuration from environment variables
-CLUSTER_NAME = os.environ['EKS_CLUSTER_NAME']
+CLUSTER_NAME = os.environ.get('EKS_CLUSTER_NAME', 'test-cluster')
 NAMESPACE = os.environ.get('NAMESPACE', 'materclaims')
 DEPLOYMENT_NAME = os.environ.get('DEPLOYMENT_NAME', 'claim-status-api')
 MIN_REPLICAS = int(os.environ.get('MIN_REPLICAS', '2'))

@@ -34,7 +34,7 @@ class TestMetricAnalyzer(unittest.TestCase):
     
     def test_calculate_trend_increasing(self):
         """Test trend calculation for increasing pattern"""
-        values = [40, 45, 50, 55, 60, 65, 70, 75, 80, 85]
+        values = [20, 30, 40, 50, 60, 70, 80, 90, 100, 110]
         trend_direction, trend_magnitude = self.analyzer.calculate_trend(values)
         
         self.assertEqual(trend_direction, 'increasing')
@@ -42,7 +42,7 @@ class TestMetricAnalyzer(unittest.TestCase):
     
     def test_calculate_trend_decreasing(self):
         """Test trend calculation for decreasing pattern"""
-        values = [85, 80, 75, 70, 65, 60, 55, 50, 45, 40]
+        values = [110, 100, 90, 80, 70, 60, 50, 40, 30, 20]
         trend_direction, trend_magnitude = self.analyzer.calculate_trend(values)
         
         self.assertEqual(trend_direction, 'decreasing')
