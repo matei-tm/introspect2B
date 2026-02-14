@@ -120,7 +120,7 @@ Pre-configured CloudWatch Logs Insights queries for:
 
 | Layer | Technology |
 |-------|-----------|
-| **API** | ASP.NET Core 8.0 (Minimal API) |
+| **API** | ASP.NET Core 10.0 (Minimal API) |
 | **Container Orchestration** | Amazon EKS 1.31 |
 | **AI/ML** | Amazon Bedrock (Claude 3 Haiku) |
 | **Autoscaling** | AWS Lambda (Python 3.11) |

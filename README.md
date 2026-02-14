@@ -183,7 +183,7 @@ aws logs tail /aws/lambda/introspect2b-eks-intelligent-autoscaler --follow
 - Docker
 - Kubernetes cluster (EKS, kind, or local)
 - AWS account with appropriate IAM permissions
-- dotnet 8.0 SDK
+- dotnet 10.0 SDK
 - terraform 1.x
 
 ### 1. Clone Repository
