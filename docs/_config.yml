@@ -1,0 +1,67 @@
+title: Introspect2B
+description: GenAI-Powered Cloud-Native Claim Status API - Enterprise-grade microservice with Amazon Bedrock integration
+theme: jekyll-theme-cayman
+baseurl: /introspect2B
+url: https://matei-tm.github.io
+
+# Repository info
+repository: matei-tm/introspect2B
+github_username: matei-tm
+
+# Build settings
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  hard_wrap: false
+
+# Plugins
+plugins:
+  - jekyll-relative-links
+  - jekyll-optional-front-matter
+  - jekyll-readme-index
+  - jekyll-titles-from-headings
+  - jekyll-seo-tag
+
+# Collections
+collections:
+  guides:
+    output: true
+    permalink: /guides/:name
+  architecture:
+    output: true
+    permalink: /architecture/:name
+  features:
+    output: true
+    permalink: /features/:name
+
+# Navigation
+header_pages:
+  - index.md
+  - getting-started.md
+  - architecture/overview.md
+  - features/genai-integration.md
+  - deployment/deployment-guide.md
+  - api-reference.md
+
+# Exclude files
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - .sass-cache
+  - .jekyll-cache
+
+# Include files
+include:
+  - _*.md
+  - media
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
