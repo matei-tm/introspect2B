@@ -118,30 +118,66 @@ data "kubernetes_namespace" "amazon_cloudwatch" {
   ]
 }
 
-# Service Account for CloudWatch Agent
-resource "kubernetes_service_account" "cloudwatch_agent" {
+# Reference Service Account for CloudWatch Agent (created by addon)
+data "kubernetes_service_account" "cloudwatch_agent" {
   metadata {
     name      = "cloudwatch-agent"
     namespace = data.kubernetes_namespace.amazon_cloudwatch.metadata[0].name
-    annotations = {
-      "eks.amazonaws.com/role-arn" = aws_iam_role.cloudwatch_agent.arn
-    }
   }
 
   depends_on = [data.kubernetes_namespace.amazon_cloudwatch]
 }
 
-# Service Account for Fluent Bit
-resource "kubernetes_service_account" "fluent_bit" {
+# Patch CloudWatch Agent Service Account with IRSA annotation
+resource "null_resource" "patch_cloudwatch_agent_sa" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      kubectl annotate serviceaccount cloudwatch-agent \
+        -n amazon-cloudwatch \
+        eks.amazonaws.com/role-arn=${aws_iam_role.cloudwatch_agent.arn} \
+        --overwrite
+    EOT
+  }
+
+  depends_on = [
+    data.kubernetes_service_account.cloudwatch_agent,
+    null_resource.update_kubeconfig
+  ]
+
+  triggers = {
+    role_arn = aws_iam_role.cloudwatch_agent.arn
+  }
+}
+
+# Reference Service Account for Fluent Bit (created by addon)
+data "kubernetes_service_account" "fluent_bit" {
   metadata {
     name      = "fluent-bit"
     namespace = data.kubernetes_namespace.amazon_cloudwatch.metadata[0].name
-    annotations = {
-      "eks.amazonaws.com/role-arn" = aws_iam_role.fluent_bit.arn
-    }
   }
 
   depends_on = [data.kubernetes_namespace.amazon_cloudwatch]
+}
+
+# Patch Fluent Bit Service Account with IRSA annotation
+resource "null_resource" "patch_fluent_bit_sa" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      kubectl annotate serviceaccount fluent-bit \
+        -n amazon-cloudwatch \
+        eks.amazonaws.com/role-arn=${aws_iam_role.fluent_bit.arn} \
+        --overwrite
+    EOT
+  }
+
+  depends_on = [
+    data.kubernetes_service_account.fluent_bit,
+    null_resource.update_kubeconfig
+  ]
+
+  triggers = {
+    role_arn = aws_iam_role.fluent_bit.arn
+  }
 }
 
 # Apply RBAC using kubectl to avoid authorization issues
@@ -246,60 +282,11 @@ resource "kubernetes_config_map" "cloudwatch_agent" {
   depends_on = [data.kubernetes_namespace.amazon_cloudwatch]
 }
 
-# ConfigMap for Fluent Bit
-resource "kubernetes_config_map" "fluent_bit_config" {
+# Reference ConfigMap for Fluent Bit (created by addon)
+data "kubernetes_config_map" "fluent_bit_config" {
   metadata {
     name      = "fluent-bit-config"
     namespace = data.kubernetes_namespace.amazon_cloudwatch.metadata[0].name
-  }
-
-  data = {
-    "fluent-bit.conf" = <<-EOT
-      [SERVICE]
-          Flush                     5
-          Log_Level                 info
-          Daemon                    off
-          Parsers_File              parsers.conf
-          HTTP_Server               On
-          HTTP_Listen               0.0.0.0
-          HTTP_Port                 2020
-
-      [INPUT]
-          Name                tail
-          Path                /var/log/containers/*.log
-          Parser              docker
-          Tag                 kube.*
-          Mem_Buf_Limit       5MB
-          Skip_Long_Lines     On
-
-      [FILTER]
-          Name                kubernetes
-          Match               kube.*
-          Kube_URL            https://kubernetes.default.svc:443
-          Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-          Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
-          Kube_Tag_Prefix     kube.var.log.containers.
-          Merge_Log           On
-          Keep_Log            Off
-          K8S-Logging.Parser  On
-          K8S-Logging.Exclude On
-
-      [OUTPUT]
-          Name                cloudwatch_logs
-          Match               *
-          region              ${var.aws_region}
-          log_group_name      /aws/containerinsights/${var.cluster_name}/application
-          log_stream_prefix   fluentbit-
-          auto_create_group   true
-    EOT
-
-    "parsers.conf" = <<-EOT
-      [PARSER]
-          Name        docker
-          Format      json
-          Time_Key    time
-          Time_Format %Y-%m-%dT%H:%M:%S.%L%z
-    EOT
   }
 
   depends_on = [data.kubernetes_namespace.amazon_cloudwatch]
@@ -327,7 +314,7 @@ resource "kubernetes_daemonset" "cloudwatch_agent" {
       }
 
       spec {
-        service_account_name = kubernetes_service_account.cloudwatch_agent.metadata[0].name
+        service_account_name = data.kubernetes_service_account.cloudwatch_agent.metadata[0].name
 
         container {
           name  = "cloudwatch-agent"
@@ -455,7 +442,7 @@ resource "kubernetes_daemonset" "cloudwatch_agent" {
   }
 
   depends_on = [
-    kubernetes_service_account.cloudwatch_agent,
+    data.kubernetes_service_account.cloudwatch_agent,
     kubernetes_config_map.cloudwatch_agent
   ]
 }
@@ -489,7 +476,7 @@ resource "kubernetes_daemonset" "fluent_bit" {
       }
 
       spec {
-        service_account_name = kubernetes_service_account.fluent_bit.metadata[0].name
+        service_account_name = data.kubernetes_service_account.fluent_bit.metadata[0].name
 
         container {
           name  = "fluent-bit"
@@ -562,7 +549,7 @@ resource "kubernetes_daemonset" "fluent_bit" {
   }
 
   depends_on = [
-    kubernetes_service_account.fluent_bit,
-    kubernetes_config_map.fluent_bit_config
+    data.kubernetes_service_account.fluent_bit,
+    data.kubernetes_config_map.fluent_bit_config
   ]
 }

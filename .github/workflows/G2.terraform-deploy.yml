@@ -157,6 +157,23 @@ jobs:
           else
             echo "kubernetes_namespace.amazon_cloudwatch not in state - skipping"
           fi
+          
+          # Remove CloudWatch service accounts if they exist (now data sources)
+          if terraform state list | grep -q "kubernetes_service_account.cloudwatch_agent"; then
+            echo "Found kubernetes_service_account.cloudwatch_agent in state - removing it (now a data source)"
+            terraform state rm kubernetes_service_account.cloudwatch_agent || true
+          fi
+          
+          if terraform state list | grep -q "kubernetes_service_account.fluent_bit"; then
+            echo "Found kubernetes_service_account.fluent_bit in state - removing it (now a data source)"
+            terraform state rm kubernetes_service_account.fluent_bit || true
+          fi
+          
+          # Remove Fluent Bit config map if it exists (now a data source)
+          if terraform state list | grep -q "kubernetes_config_map.fluent_bit_config"; then
+            echo "Found kubernetes_config_map.fluent_bit_config in state - removing it (now a data source)"
+            terraform state rm kubernetes_config_map.fluent_bit_config || true
+          fi
         continue-on-error: true
 
       - name: Terraform Apply
