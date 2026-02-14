@@ -6,6 +6,7 @@ A cloud-native microservice demonstrating enterprise-grade architecture patterns
 
 - [Overview](#overview)
 - [Architecture](#architecture)
+- [Intelligent Autoscaling](#-intelligent-autoscaling)
 - [Quick Start](#quick-start)
 ## 🔑 API Gateway API Key
 
@@ -74,6 +75,104 @@ graph TD
 | **S3Service** | Claim notes retrieval | Amazon S3 |
 | **BedrockService** | AI summarization | Amazon Bedrock |
 | **Health Checks** | Kubernetes liveness/readiness | .NET Health Checks |
+
+---
+
+## 🤖 Intelligent Autoscaling
+
+This project includes an **AI-workload-aware autoscaling system** designed specifically for claims processing workloads that rely on Amazon Bedrock for GenAI inference.
+
+### Why Intelligent Autoscaling?
+
+Traditional HPA (Horizontal Pod Autoscaler) scales based on CPU and memory metrics, but AI workloads behave differently:
+
+- **Variable Bedrock latency** - Inference times can vary from 1-10 seconds
+- **Model initialization** - Cold starts cause temporary memory spikes (noise, not load)
+- **Concurrency limits** - Bedrock throttling isn't visible in pod CPU metrics
+- **Request queuing** - Requests waiting for Bedrock don't show as CPU load
+
+### How It Works
+
+A Lambda function evaluates **multiple signals** every 5 minutes:
+
+```
+CPU Utilization + Memory Usage + API Latency + Bedrock Duration
+         ↓              ↓              ↓              ↓
+     Trend Analysis → Noise Filter → Signal Correlator
+                            ↓
+                    Decision Engine
+                            ↓
+            Scale Up / Scale Down / No Action
+```
+
+**Key Features:**
+
+✅ **Multi-metric evaluation** - Correlates 4+ signals before scaling  
+✅ **Trend-based forecasting** - Detects increasing/decreasing patterns (15% threshold)  
+✅ **Intelligent noise filtering** - Ignores transient spikes (<5% variation)  
+✅ **Dual trigger model** - Proactive (every 5 min) + Reactive (CloudWatch alarms)  
+✅ **Explainable decisions** - Full audit trail with reasoning  
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│           CloudWatch Metrics                     │
+│   CPU | Memory | API Latency | Bedrock Duration │
+└────────────────────┬────────────────────────────┘
+                     │
+    ┌────────────────▼────────────────┐
+    │  Lambda (Intelligent Autoscaler) │
+    │  • Trend Analyzer               │
+    │  • Noise Filter                 │
+    │  • Decision Engine              │
+    └────────────────┬────────────────┘
+                     │
+         ┌───────────┴───────────┐
+         │  Scaling Decision     │
+         │  (published to CW)    │
+         └───────────────────────┘
+```
+
+### Example Decision
+
+When the Lambda detects correlated signals:
+
+```json
+{
+  "decision": "scale_up",
+  "mode": "proactive",
+  "reasoning": [
+    "Multi-metric evaluation: 3 scale-up signals detected",
+    "CPU: High utilization (75%) with increasing trend",
+    "API Latency: Sustained high latency (5200ms) with increasing trend",
+    "Bedrock: Inference duration (3800ms) increasing, likely due to concurrency limits"
+  ]
+}
+```
+
+### Deployment
+
+Deployed automatically with Terraform:
+
+```bash
+cd iac/terraform
+terraform apply  # Creates Lambda, EventBridge rule, CloudWatch alarms
+```
+
+### Monitoring
+
+Access the CloudWatch dashboard:
+```
+AWS Console → CloudWatch → Dashboards → introspect2b-eks-intelligent-autoscaler
+```
+
+View scaling decisions:
+```bash
+aws logs tail /aws/lambda/introspect2b-eks-intelligent-autoscaler --follow
+```
+
+📖 **Full Documentation:** [Intelligent Autoscaler README](src/intelligent-autoscaler/README.md) | [Extended Architecture](docs/architecture-extended.md)
 
 ---
 
@@ -389,6 +488,14 @@ introspect2B/
       "Resource": "arn:aws:s3:::claim-notes-*/*"
     },
     {
+**Intelligent Autoscaler Metrics:**
+- Scaling decisions (scale up/down/none)
+- Execution success/failure rate
+- Metric trends and analysis results
+- Decision reasoning logs
+
+**Dashboard:** `introspect2b-eks-intelligent-autoscaler`
+
       "Effect": "Allow",
       "Action": [
         "bedrock:InvokeModel"
