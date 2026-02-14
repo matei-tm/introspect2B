@@ -105,13 +105,10 @@ resource "aws_iam_role_policy_attachment" "fluent_bit" {
   role       = aws_iam_role.fluent_bit.name
 }
 
-# Kubernetes Namespace for CloudWatch
-resource "kubernetes_namespace" "amazon_cloudwatch" {
+# Reference the Kubernetes Namespace created by amazon-cloudwatch-observability addon
+data "kubernetes_namespace" "amazon_cloudwatch" {
   metadata {
     name = "amazon-cloudwatch"
-    labels = {
-      name = "amazon-cloudwatch"
-    }
   }
 
   depends_on = [

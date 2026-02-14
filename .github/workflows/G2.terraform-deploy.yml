@@ -145,6 +145,20 @@ jobs:
               body: output
             })
 
+      - name: Remove namespace from state (migration)
+        if: |
+          (github.event.inputs.action == 'apply' || 
+           (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+        run: |
+          # Remove old namespace resource if it exists (now converted to data source)
+          if terraform state list | grep -q "kubernetes_namespace.amazon_cloudwatch"; then
+            echo "Found kubernetes_namespace.amazon_cloudwatch in state - removing it (now a data source)"
+            terraform state rm kubernetes_namespace.amazon_cloudwatch || true
+          else
+            echo "kubernetes_namespace.amazon_cloudwatch not in state - skipping"
+          fi
+        continue-on-error: true
+
       - name: Terraform Apply
         if: |
           (github.event.inputs.action == 'apply' || 
