@@ -31,15 +31,10 @@ on:
         description: Optional CloudFormation parameter overrides (key=value ...)
         required: false
         type: string
-      skip_start_lab:
-        description: Skip the start-lab job
-        required: false
-        default: false
-        type: boolean
+
 
 jobs:
   start-lab:
-    if: ${{ !github.event.inputs.skip_start_lab }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
