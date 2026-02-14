@@ -11,7 +11,7 @@ module "eks" {
   cluster_endpoint_public_access = true
 
   # Disable KMS encryption to avoid permission issues in lab environment
-  create_kms_key = false
+  create_kms_key            = false
   cluster_encryption_config = {}
 
   # Enable IRSA (IAM Roles for Service Accounts)
@@ -25,7 +25,7 @@ module "eks" {
     main = {
       name           = "eks-lt-ng-public"
       instance_types = [var.node_instance_type]
-      
+
       min_size     = var.node_min_size
       max_size     = var.node_max_size
       desired_size = var.node_desired_capacity
@@ -103,19 +103,19 @@ data "aws_cloudformation_stack" "codepipeline" {
 
 # Create EKS access entry for current IAM user
 resource "aws_eks_access_entry" "admin_user" {
-  cluster_name      = module.eks.cluster_name
-  principal_arn     = data.aws_caller_identity.current.arn
-  type              = "STANDARD"
-  
+  cluster_name  = module.eks.cluster_name
+  principal_arn = data.aws_caller_identity.current.arn
+  type          = "STANDARD"
+
   depends_on = [module.eks]
 }
 
 # Create EKS access entry for CodeBuild service role
 resource "aws_eks_access_entry" "codebuild" {
-  cluster_name      = module.eks.cluster_name
-  principal_arn     = data.aws_cloudformation_stack.codepipeline.outputs["CodeBuildServiceRoleArn"]
-  type              = "STANDARD"
-  
+  cluster_name  = module.eks.cluster_name
+  principal_arn = data.aws_cloudformation_stack.codepipeline.outputs["CodeBuildServiceRoleArn"]
+  type          = "STANDARD"
+
   depends_on = [module.eks]
 }
 

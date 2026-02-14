@@ -1,6 +1,6 @@
 terraform {
   required_version = ">= 1.0"
-  
+
   # S3 backend for state management
   # Run the "1. Setup Terraform Backend" GitHub Action first to create the S3 bucket and DynamoDB table
   # Or run: ./backend-setup.sh us-east-1
@@ -11,7 +11,7 @@ terraform {
     dynamodb_table = "introspect2b-terraform-locks"
     encrypt        = true
   }
-  
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -34,7 +34,7 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
-  
+
   default_tags {
     tags = {
       Project     = "EKS-ClaimStatusAPI-Demo"
@@ -47,11 +47,11 @@ provider "aws" {
 provider "kubernetes" {
   host                   = try(module.eks.cluster_endpoint, "")
   cluster_ca_certificate = try(base64decode(module.eks.cluster_certificate_authority_data), "")
-  
+
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
-    args = ["eks", "get-token", "--cluster-name", try(module.eks.cluster_name, "")]
+    args        = ["eks", "get-token", "--cluster-name", try(module.eks.cluster_name, "")]
   }
 }
 
@@ -59,11 +59,11 @@ provider "helm" {
   kubernetes {
     host                   = try(module.eks.cluster_endpoint, "")
     cluster_ca_certificate = try(base64decode(module.eks.cluster_certificate_authority_data), "")
-    
+
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
       command     = "aws"
-      args = ["eks", "get-token", "--cluster-name", try(module.eks.cluster_name, "")]
+      args        = ["eks", "get-token", "--cluster-name", try(module.eks.cluster_name, "")]
     }
   }
 }

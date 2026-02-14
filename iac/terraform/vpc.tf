@@ -11,8 +11,8 @@ module "vpc" {
   name = "${var.cluster_name}-vpc"
   cidr = var.vpc_cidr
 
-  azs             = data.aws_availability_zones.available.names
-  public_subnets  = [var.public_subnet_1_cidr, var.public_subnet_2_cidr]
+  azs            = data.aws_availability_zones.available.names
+  public_subnets = [var.public_subnet_1_cidr, var.public_subnet_2_cidr]
 
   enable_nat_gateway   = false
   enable_dns_hostnames = true

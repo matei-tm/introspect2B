@@ -92,18 +92,18 @@ data "archive_file" "intelligent_autoscaler" {
 resource "aws_lambda_function" "intelligent_autoscaler" {
   filename         = data.archive_file.intelligent_autoscaler.output_path
   function_name    = "${var.cluster_name}-intelligent-autoscaler"
-  role            = aws_iam_role.intelligent_autoscaler.arn
-  handler         = "lambda_function.lambda_handler"
+  role             = aws_iam_role.intelligent_autoscaler.arn
+  handler          = "lambda_function.lambda_handler"
   source_code_hash = data.archive_file.intelligent_autoscaler.output_base64sha256
-  runtime         = "python3.11"
-  timeout         = 300  # 5 minutes
-  memory_size     = 256
+  runtime          = "python3.11"
+  timeout          = 300 # 5 minutes
+  memory_size      = 256
 
   environment {
     variables = {
-      EKS_CLUSTER_NAME        = module.eks.cluster_name
-      NAMESPACE               = "materclaims"
-      DEPLOYMENT_NAME         = "claim-status-api"
+      EKS_CLUSTER_NAME       = module.eks.cluster_name
+      NAMESPACE              = "materclaims"
+      DEPLOYMENT_NAME        = "claim-status-api"
       MIN_REPLICAS           = "2"
       MAX_REPLICAS           = "10"
       METRIC_WINDOW_MINUTES  = "10"
@@ -169,7 +169,7 @@ resource "aws_cloudwatch_metric_alarm" "api_latency_high" {
   namespace           = "ClaimStatusAPI"
   period              = 60
   statistic           = "Average"
-  threshold           = 5000  # 5 seconds
+  threshold           = 5000 # 5 seconds
   alarm_description   = "API latency is consistently high"
   treat_missing_data  = "notBreaching"
 
@@ -202,7 +202,7 @@ resource "aws_cloudwatch_metric_alarm" "bedrock_duration_high" {
   namespace           = "ClaimStatusAPI"
   period              = 60
   statistic           = "Average"
-  threshold           = 4000  # 4 seconds
+  threshold           = 4000 # 4 seconds
   alarm_description   = "Bedrock inference duration is high, indicating potential concurrency issues"
   treat_missing_data  = "notBreaching"
 
@@ -275,9 +275,9 @@ resource "aws_cloudwatch_dashboard" "intelligent_autoscaler" {
       {
         type = "log"
         properties = {
-          query   = "SOURCE '/aws/lambda/${aws_lambda_function.intelligent_autoscaler.function_name}' | fields @timestamp, decision.action, decision.mode, decision.reason | filter decision.action != 'none' | sort @timestamp desc"
-          region  = var.aws_region
-          title   = "Recent Scaling Decisions"
+          query  = "SOURCE '/aws/lambda/${aws_lambda_function.intelligent_autoscaler.function_name}' | fields @timestamp, decision.action, decision.mode, decision.reason | filter decision.action != 'none' | sort @timestamp desc"
+          region = var.aws_region
+          title  = "Recent Scaling Decisions"
         }
       }
     ]
