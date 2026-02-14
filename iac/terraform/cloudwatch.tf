@@ -141,6 +141,13 @@ data "kubernetes_service_account" "cloudwatch_agent" {
 resource "null_resource" "patch_cloudwatch_agent_sa" {
   provisioner "local-exec" {
     command = <<-EOT
+      # Update kubeconfig to ensure kubectl has access
+      aws eks update-kubeconfig --region ${var.aws_region} --name ${var.cluster_name}
+      
+      # Wait for addon to create service account
+      sleep 10
+      
+      # Patch service account with IRSA annotation
       kubectl annotate serviceaccount cloudwatch-agent \
         -n amazon-cloudwatch \
         eks.amazonaws.com/role-arn=${aws_iam_role.cloudwatch_agent.arn} \
@@ -150,7 +157,8 @@ resource "null_resource" "patch_cloudwatch_agent_sa" {
 
   depends_on = [
     data.kubernetes_service_account.cloudwatch_agent,
-    null_resource.update_kubeconfig
+    null_resource.update_kubeconfig,
+    time_sleep.wait_for_access_policy
   ]
 
   triggers = {
@@ -172,6 +180,13 @@ data "kubernetes_service_account" "fluent_bit" {
 resource "null_resource" "patch_fluent_bit_sa" {
   provisioner "local-exec" {
     command = <<-EOT
+      # Update kubeconfig to ensure kubectl has access
+      aws eks update-kubeconfig --region ${var.aws_region} --name ${var.cluster_name}
+      
+      # Wait for addon to create service account
+      sleep 10
+      
+      # Patch service account with IRSA annotation
       kubectl annotate serviceaccount fluent-bit \
         -n amazon-cloudwatch \
         eks.amazonaws.com/role-arn=${aws_iam_role.fluent_bit.arn} \
@@ -181,7 +196,8 @@ resource "null_resource" "patch_fluent_bit_sa" {
 
   depends_on = [
     data.kubernetes_service_account.fluent_bit,
-    null_resource.update_kubeconfig
+    null_resource.update_kubeconfig,
+    time_sleep.wait_for_access_policy
   ]
 
   triggers = {
