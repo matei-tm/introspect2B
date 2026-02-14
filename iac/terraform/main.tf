@@ -37,7 +37,7 @@ provider "aws" {
   
   default_tags {
     tags = {
-      Project     = "EKS-Dapr-Demo"
+      Project     = "EKS-ClaimStatusAPI-Demo"
       Environment = var.environment
       ManagedBy   = "Terraform"
     }

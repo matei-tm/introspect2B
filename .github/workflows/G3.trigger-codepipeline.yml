@@ -1,4 +1,4 @@
-name: Auto-trigger CodePipeline on API Changes
+name: 3. Auto-trigger CodePipeline on API Changes
 
 on:
   push:
