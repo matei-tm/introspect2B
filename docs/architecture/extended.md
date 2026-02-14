@@ -1,3 +1,8 @@
+---
+layout: default
+title: Extended Architecture - Intelligent Autoscaling
+---
+
 # Extended Architecture with Intelligent Autoscaling
 
 ## System Overview
