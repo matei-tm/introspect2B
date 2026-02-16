@@ -78,12 +78,17 @@ output "configure_kubectl" {
 
 output "cloudwatch_log_group_application" {
   description = "CloudWatch Logs group for application logs"
-  value       = "/aws/containerinsights/${var.cluster_name}/application"
+  value       = aws_cloudwatch_log_group.container_insights_application.name
 }
 
 output "cloudwatch_log_group_cluster" {
   description = "CloudWatch Logs group for cluster control plane logs"
   value       = "/aws/eks/${var.cluster_name}/cluster"
+}
+
+output "cloudwatch_log_group_performance" {
+  description = "CloudWatch Logs group for Container Insights performance metrics"
+  value       = aws_cloudwatch_log_group.container_insights_performance.name
 }
 
 output "cloudwatch_agent_role_arn" {

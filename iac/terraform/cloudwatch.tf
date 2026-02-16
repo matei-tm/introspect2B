@@ -9,6 +9,48 @@
 # This file only manages:
 # - IAM roles and policies for IRSA (IAM Roles for Service Accounts)
 # - Patching service accounts with IAM role annotations
+# - CloudWatch Log Groups for Container Insights
+
+# CloudWatch Log Groups for Container Insights
+resource "aws_cloudwatch_log_group" "container_insights_application" {
+  name              = "/aws/containerinsights/${var.cluster_name}/application"
+  retention_in_days = 7
+
+  tags = {
+    Name        = "EKS Container Insights Application Logs"
+    Environment = var.environment
+  }
+}
+
+resource "aws_cloudwatch_log_group" "container_insights_performance" {
+  name              = "/aws/containerinsights/${var.cluster_name}/performance"
+  retention_in_days = 7
+
+  tags = {
+    Name        = "EKS Container Insights Performance Logs"
+    Environment = var.environment
+  }
+}
+
+resource "aws_cloudwatch_log_group" "container_insights_dataplane" {
+  name              = "/aws/containerinsights/${var.cluster_name}/dataplane"
+  retention_in_days = 7
+
+  tags = {
+    Name        = "EKS Container Insights Dataplane Logs"
+    Environment = var.environment
+  }
+}
+
+resource "aws_cloudwatch_log_group" "container_insights_host" {
+  name              = "/aws/containerinsights/${var.cluster_name}/host"
+  retention_in_days = 7
+
+  tags = {
+    Name        = "EKS Container Insights Host Logs"
+    Environment = var.environment
+  }
+}
 
 # IAM Policy for CloudWatch Container Insights
 data "aws_iam_policy_document" "cloudwatch_container_insights" {
