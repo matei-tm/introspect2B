@@ -17,7 +17,7 @@ echo ""
 # Test 1: Bedrock Integration Logs
 echo "TEST 1: Bedrock Integration Logs"
 echo "---------------------------------"
-if kubectl logs -n $NAMESPACE deployment/$DEPLOYMENT_NAME --tail=100 2>&1 | grep -i "bedrock" | tail -20; then
+if kubectl logs -n $NAMESPACE deployment/$DEPLOYMENT_NAME --tail=200 2>&1 | grep -i "bedrock" | tail -30; then
     echo "✓ Found Bedrock logs"
 else
     echo "✗ No Bedrock logs found (this is normal if no recent API calls)"
