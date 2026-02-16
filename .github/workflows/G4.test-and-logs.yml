@@ -107,24 +107,29 @@ jobs:
 
       - name: Check Bedrock CloudWatch metrics
         id: bedrock-metrics
+        continue-on-error: true
         run: |
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 📊 Bedrock Metrics (Last 10 Minutes)" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          # Calculate timestamps using epoch time (more portable)
+          END_TIME=$(date -u +%Y-%m-%dT%H:%M:%S)
+          START_TIME=$(date -u -d "10 minutes ago" +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -u -v-10M +%Y-%m-%dT%H:%M:%S)
           
           # Get Bedrock inference duration metrics
           BEDROCK_METRICS=$(aws cloudwatch get-metric-statistics \
             --namespace ClaimStatusAPI \
             --metric-name BedrockInferenceDuration \
             --dimensions Name=Service,Value=claim-status-api Name=Model,Value=claude-3-haiku \
-            --start-time $(date -u -d '10 minutes ago' +%Y-%m-%dT%H:%M:%S) \
-            --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
+            --start-time "$START_TIME" \
+            --end-time "$END_TIME" \
             --period 300 \
             --statistics Average,Maximum,SampleCount \
             --query 'Datapoints[*].[Timestamp,Average,Maximum,SampleCount]' \
             --output text 2>&1)
           
-          if [ -n "$BEDROCK_METRICS" ] && [ "$BEDROCK_METRICS" != "None" ]; then
+          if [ -n "$BEDROCK_METRICS" ] && [ "$BEDROCK_METRICS" != "None" ] && ! echo "$BEDROCK_METRICS" | grep -q "An error occurred"; then
             echo "$BEDROCK_METRICS" | tee -a $GITHUB_STEP_SUMMARY
           else
             echo "No Bedrock metrics available in the last 10 minutes" | tee -a $GITHUB_STEP_SUMMARY
@@ -237,12 +242,15 @@ jobs:
             kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} --tail=200 | grep -i "bedrock\|invoke\|claude" || echo "No Bedrock activity found"
             echo ""
             echo "=== CloudWatch Bedrock Metrics (Last 1 Hour) ==="
+            # Calculate timestamps
+            END_TIME=$(date -u +%Y-%m-%dT%H:%M:%S)
+            START_TIME=$(date -u -d "1 hour ago" +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -u -v-1H +%Y-%m-%dT%H:%M:%S)
             aws cloudwatch get-metric-statistics \
               --namespace ClaimStatusAPI \
               --metric-name BedrockInferenceDuration \
               --dimensions Name=Service,Value=claim-status-api Name=Model,Value=claude-3-haiku \
-              --start-time $(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%S) \
-              --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
+              --start-time "$START_TIME" \
+              --end-time "$END_TIME" \
               --period 300 \
               --statistics Average,Maximum,Minimum,SampleCount \
               --output table 2>&1 || echo "No Bedrock metrics available"
