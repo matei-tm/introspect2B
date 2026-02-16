@@ -25,7 +25,7 @@ Before you begin, ensure you have:
 
 ### Optional (for development)
 - 🔧 Docker Desktop (for local testing)
-- 🔧 .NET 8 SDK (for local development)
+- 🔧 .NET 10 SDK (for local development)
 - 🔧 Visual Studio Code or similar IDE
 
 ## Quick Deploy (30 minutes)

@@ -10,7 +10,7 @@ This guide walks through deploying the Claim Status API microservice to AWS EKS 
 - Terraform installed (>= 1.0)
 - kubectl configured for EKS access
 - Docker installed (for local testing)
-- .NET 8 SDK (optional, for local development)
+- .NET 10 SDK (optional, for local development)
 
 ## Architecture
 
