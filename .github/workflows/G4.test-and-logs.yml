@@ -255,7 +255,12 @@ jobs:
             echo "## 🤖 Bedrock Integration Analysis"
             echo '```'
             echo "=== Application Logs (Bedrock mentions) ==="
-            kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} --tail=200 | grep -i "bedrock\|invoke\|claude" || echo "No Bedrock activity found"
+            BEDROCK_LOGS_COMP=$(kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} --tail=200 | grep -iE "bedrock|nova-lite|nova-pro|claude-3|BedrockInferenceDuration|InvokeModel" | grep -viE "invokefunction|invokemeth" || true)
+            if [ -n "$BEDROCK_LOGS_COMP" ]; then
+              echo "$BEDROCK_LOGS_COMP"
+            else
+              echo "No Bedrock activity found in last 200 log lines"
+            fi
             echo ""
             echo "=== CloudWatch Bedrock Metrics (Last 1 Hour) ==="
             # Calculate timestamps using epoch time (portable)
