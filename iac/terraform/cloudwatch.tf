@@ -127,16 +127,6 @@ data "kubernetes_namespace" "amazon_cloudwatch" {
   ]
 }
 
-# Reference Service Account for CloudWatch Agent (created by addon)
-data "kubernetes_service_account" "cloudwatch_agent" {
-  metadata {
-    name      = "cloudwatch-agent"
-    namespace = data.kubernetes_namespace.amazon_cloudwatch.metadata[0].name
-  }
-
-  depends_on = [data.kubernetes_namespace.amazon_cloudwatch]
-}
-
 # Patch CloudWatch Agent Service Account with IRSA annotation
 resource "null_resource" "patch_cloudwatch_agent_sa" {
   provisioner "local-exec" {
@@ -145,7 +135,17 @@ resource "null_resource" "patch_cloudwatch_agent_sa" {
       aws eks update-kubeconfig --region ${var.aws_region} --name ${var.cluster_name}
       
       # Wait for addon to create service account
-      sleep 10
+      sleep 15
+      
+      # Wait for service account to be created by addon
+      for i in {1..30}; do
+        if kubectl get serviceaccount cloudwatch-agent -n amazon-cloudwatch 2>/dev/null; then
+          echo "Service account found"
+          break
+        fi
+        echo "Waiting for service account... attempt $i/30"
+        sleep 2
+      done
       
       # Patch service account with IRSA annotation
       kubectl annotate serviceaccount cloudwatch-agent \
@@ -156,7 +156,7 @@ resource "null_resource" "patch_cloudwatch_agent_sa" {
   }
 
   depends_on = [
-    data.kubernetes_service_account.cloudwatch_agent,
+    data.kubernetes_namespace.amazon_cloudwatch,
     null_resource.update_kubeconfig,
     time_sleep.wait_for_access_policy
   ]
@@ -164,16 +164,6 @@ resource "null_resource" "patch_cloudwatch_agent_sa" {
   triggers = {
     role_arn = aws_iam_role.cloudwatch_agent.arn
   }
-}
-
-# Reference Service Account for Fluent Bit (created by addon)
-data "kubernetes_service_account" "fluent_bit" {
-  metadata {
-    name      = "fluent-bit"
-    namespace = data.kubernetes_namespace.amazon_cloudwatch.metadata[0].name
-  }
-
-  depends_on = [data.kubernetes_namespace.amazon_cloudwatch]
 }
 
 # Patch Fluent Bit Service Account with IRSA annotation
@@ -184,7 +174,17 @@ resource "null_resource" "patch_fluent_bit_sa" {
       aws eks update-kubeconfig --region ${var.aws_region} --name ${var.cluster_name}
       
       # Wait for addon to create service account
-      sleep 10
+      sleep 15
+      
+      # Wait for service account to be created by addon
+      for i in {1..30}; do
+        if kubectl get serviceaccount fluent-bit -n amazon-cloudwatch 2>/dev/null; then
+          echo "Service account found"
+          break
+        fi
+        echo "Waiting for service account... attempt $i/30"
+        sleep 2
+      done
       
       # Patch service account with IRSA annotation
       kubectl annotate serviceaccount fluent-bit \
@@ -195,7 +195,7 @@ resource "null_resource" "patch_fluent_bit_sa" {
   }
 
   depends_on = [
-    data.kubernetes_service_account.fluent_bit,
+    data.kubernetes_namespace.amazon_cloudwatch,
     null_resource.update_kubeconfig,
     time_sleep.wait_for_access_policy
   ]
