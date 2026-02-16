@@ -102,7 +102,20 @@ jobs:
           echo "## 🤖 Bedrock Integration Logs" >> $GITHUB_STEP_SUMMARY
           echo "Searching for Bedrock invocations in application logs..." >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} --tail=100 | grep -i "bedrock\|invoke\|nova\|claude" | tail -20 | tee -a $GITHUB_STEP_SUMMARY || echo "No Bedrock logs found in recent activity" | tee -a $GITHUB_STEP_SUMMARY
+          
+          # Get logs and filter for actual Bedrock activity (not attack attempts)
+          BEDROCK_LOGS=$(kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} --tail=200 2>&1 | \
+            grep -i "bedrock\|nova-lite\|nova-pro\|claude-3\|BedrockInferenceDuration\|InvokeModel" | \
+            grep -v "invokefunction\|invokemeth" | \
+            tail -30)
+          
+          if [ -n "$BEDROCK_LOGS" ]; then
+            echo "$BEDROCK_LOGS" | tee -a $GITHUB_STEP_SUMMARY
+          else
+            echo "No Bedrock logs found in recent activity (last 200 lines)" | tee -a $GITHUB_STEP_SUMMARY
+            echo "This is normal if no API calls with Bedrock were made recently" | tee -a $GITHUB_STEP_SUMMARY
+          fi
+          
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Check Bedrock CloudWatch metrics
