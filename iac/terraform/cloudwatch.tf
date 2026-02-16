@@ -131,9 +131,6 @@ data "kubernetes_namespace" "amazon_cloudwatch" {
 resource "null_resource" "patch_cloudwatch_agent_sa" {
   provisioner "local-exec" {
     command = <<-EOT
-      #!/bin/bash
-      set -e
-      
       # Update kubeconfig to ensure kubectl has access
       aws eks update-kubeconfig --region ${var.aws_region} --name ${var.cluster_name}
       
@@ -141,15 +138,13 @@ resource "null_resource" "patch_cloudwatch_agent_sa" {
       sleep 15
       
       # Wait for service account to be created by addon
-      i=1
-      while [ $i -le 30 ]; do
+      for i in {1..30}; do
         if kubectl get serviceaccount cloudwatch-agent -n amazon-cloudwatch 2>/dev/null; then
           echo "Service account found"
           break
         fi
         echo "Waiting for service account... attempt $i/30"
         sleep 2
-        i=$((i+1))
       done
       
       # Patch service account with IRSA annotation
@@ -158,7 +153,6 @@ resource "null_resource" "patch_cloudwatch_agent_sa" {
         eks.amazonaws.com/role-arn=${aws_iam_role.cloudwatch_agent.arn} \
         --overwrite
     EOT
-    interpreter = ["/bin/bash", "-c"]
   }
 
   depends_on = [
@@ -172,56 +166,7 @@ resource "null_resource" "patch_cloudwatch_agent_sa" {
   }
 }
 
-# Patch Fluent Bit Service Account with IRSA annotation (if it exists)
-resource "null_resource" "patch_fluent_bit_sa" {
-  provisioner "local-exec" {
-    command = <<-EOT
-      #!/bin/bash
-      
-      # Update kubeconfig to ensure kubectl has access
-      aws eks update-kubeconfig --region ${var.aws_region} --name ${var.cluster_name}
-      
-      # Wait for addon to create service account
-      sleep 15
-      
-      # Wait for service account to be created by addon
-      i=1
-      found=false
-      while [ $i -le 30 ]; do
-        if kubectl get serviceaccount fluent-bit -n amazon-cloudwatch 2>/dev/null; then
-          echo "Fluent Bit service account found"
-          found=true
-          break
-        fi
-        echo "Waiting for fluent-bit service account... attempt $i/30"
-        sleep 2
-        i=$((i+1))
-      done
-      
-      # Patch service account with IRSA annotation if found
-      if [ "$found" = "true" ]; then
-        kubectl annotate serviceaccount fluent-bit \
-          -n amazon-cloudwatch \
-          eks.amazonaws.com/role-arn=${aws_iam_role.fluent_bit.arn} \
-          --overwrite
-        echo "✅ Fluent Bit service account patched successfully"
-      else
-        echo "⚠️  Warning: fluent-bit service account not found after 60 seconds"
-        echo "The EKS CloudWatch Observability addon may not have created this service account."
-        echo "CloudWatch Agent service account was created, so basic monitoring should work."
-        echo "This is not a critical error - continuing..."
-      fi
-    EOT
-    interpreter = ["/bin/bash", "-c"]
-  }
-
-  depends_on = [
-    data.kubernetes_namespace.amazon_cloudwatch,
-    null_resource.update_kubeconfig,
-    time_sleep.wait_for_access_policy
-  ]
-
-  triggers = {
-    role_arn = aws_iam_role.fluent_bit.arn
-  }
-}
+# Note: Fluent Bit service account is NOT created by the EKS CloudWatch Observability addon
+# The fluent-bit pods use the 'cloudwatch-agent' service account for IRSA
+# Therefore, no separate fluent-bit service account patching is needed
+# The FluentBitRole IAM role is kept for potential future use or manual configuration
