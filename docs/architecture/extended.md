@@ -97,7 +97,7 @@ graph TB
 - CloudWatch logging enabled
 
 **claim-status-api Service**
-- .NET 8 WebAPI running on EKS
+- .NET 10 WebAPI running on EKS
 - 2-10 replicas (dynamic based on load)
 - Endpoints:
   - `GET /api/claims/{id}` - Retrieve claim status

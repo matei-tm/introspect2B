@@ -1,6 +1,6 @@
 ﻿# Introspect2B: GenAI-Powered Claim Status API
 
-A cloud-native microservice demonstrating enterprise-grade architecture patterns for GenAI integration on AWS. Built with .NET 8, Kubernetes, and Amazon Bedrock.
+A cloud-native microservice demonstrating enterprise-grade architecture patterns for GenAI integration on AWS. Built with .NET 10, Kubernetes, and Amazon Bedrock.
 
 ## 📋 Table of Contents
 

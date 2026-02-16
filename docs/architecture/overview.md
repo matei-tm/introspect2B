@@ -77,7 +77,7 @@ graph TD
   - Throttling and rate limiting
   - CloudWatch integration for metrics
 
-**Claim Status API (.NET 8)**
+**Claim Status API (.NET 10)**
 - **Framework**: ASP.NET Core Minimal API
 - **Replicas**: 2-10 (autoscaling enabled)
 - **Health Checks**: Built-in liveness/readiness probes

@@ -1,6 +1,6 @@
 # Claim Status API
 
-A GenAI-enabled Claim Status API built with .NET 8 that integrates with AWS services:
+A GenAI-enabled Claim Status API built with .NET 10 that integrates with AWS services:
 
 - **DynamoDB** for claim status storage
 - **S3** for claim notes
