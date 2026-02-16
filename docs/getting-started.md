@@ -45,7 +45,6 @@ Introspect2B provides 8 automated workflows that handle everything from infrastr
 | **G2** | Terraform Deploy | Deploys infrastructure (EKS, DynamoDB, S3, IAM, Lambda) | AWS credentials |
 | **G3** | Auto-trigger CodePipeline | Automatically triggers pipeline on API code changes | AWS credentials |
 | **G4** | Test and Collect Logs | Verifies deployment and collects diagnostics | AWS credentials |
-| **G5** | Publish Wiki | Generates PDF documentation from wiki | None (uses GITHUB_TOKEN) |
 
 ## Step 1: Configure GitHub Secrets
 
