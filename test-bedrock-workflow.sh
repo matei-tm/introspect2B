@@ -27,8 +27,19 @@ echo ""
 # Test 2: Bedrock CloudWatch metrics
 echo "TEST 2: Bedrock CloudWatch Metrics"
 echo "-----------------------------------"
-END_TIME=$(date -u +%Y-%m-%dT%H:%M:%S)
-START_TIME=$(date -u -d "10 minutes ago" +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -u -v-10M +%Y-%m-%dT%H:%M:%S)
+# Calculate timestamps using epoch time (portable)
+CURRENT_EPOCH=$(date +%s)
+START_EPOCH=$((CURRENT_EPOCH - 600))  # 10 minutes ago
+
+if date --version >/dev/null 2>&1; then
+  # GNU date (Linux)
+  END_TIME=$(date -u -d "@$CURRENT_EPOCH" +%Y-%m-%dT%H:%M:%S)
+  START_TIME=$(date -u -d "@$START_EPOCH" +%Y-%m-%dT%H:%M:%S)
+else
+  # BSD date (macOS)
+  END_TIME=$(date -u -r "$CURRENT_EPOCH" +%Y-%m-%dT%H:%M:%S)
+  START_TIME=$(date -u -r "$START_EPOCH" +%Y-%m-%dT%H:%M:%S)
+fi
 
 echo "Time range: $START_TIME to $END_TIME"
 echo ""

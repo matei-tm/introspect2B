@@ -113,9 +113,22 @@ jobs:
           echo "## 📊 Bedrock Metrics (Last 10 Minutes)" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           
-          # Calculate timestamps using epoch time (more portable)
-          END_TIME=$(date -u +%Y-%m-%dT%H:%M:%S)
-          START_TIME=$(date -u -d "10 minutes ago" +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -u -v-10M +%Y-%m-%dT%H:%M:%S)
+          # Calculate timestamps using epoch time (portable across Linux and macOS)
+          CURRENT_EPOCH=$(date +%s)
+          START_EPOCH=$((CURRENT_EPOCH - 600))  # 10 minutes ago
+          
+          # Convert to ISO 8601 format for AWS CloudWatch
+          if date --version >/dev/null 2>&1; then
+            # GNU date (Linux, GitHub Actions)
+            END_TIME=$(date -u -d "@$CURRENT_EPOCH" +%Y-%m-%dT%H:%M:%S)
+            START_TIME=$(date -u -d "@$START_EPOCH" +%Y-%m-%dT%H:%M:%S)
+          else
+            # BSD date (macOS)
+            END_TIME=$(date -u -r "$CURRENT_EPOCH" +%Y-%m-%dT%H:%M:%S)
+            START_TIME=$(date -u -r "$START_EPOCH" +%Y-%m-%dT%H:%M:%S)
+          fi
+          
+          echo "Debug: START_TIME=$START_TIME, END_TIME=$END_TIME" | tee -a $GITHUB_STEP_SUMMARY
           
           # Get Bedrock inference duration metrics
           BEDROCK_METRICS=$(aws cloudwatch get-metric-statistics \
@@ -232,9 +245,16 @@ jobs:
             kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} --tail=200 | grep -i "bedrock\|invoke\|claude" || echo "No Bedrock activity found"
             echo ""
             echo "=== CloudWatch Bedrock Metrics (Last 1 Hour) ==="
-            # Calculate timestamps
-            END_TIME=$(date -u +%Y-%m-%dT%H:%M:%S)
-            START_TIME=$(date -u -d "1 hour ago" +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -u -v-1H +%Y-%m-%dT%H:%M:%S)
+            # Calculate timestamps using epoch time (portable)
+            CURRENT_EPOCH=$(date +%s)
+            START_EPOCH=$((CURRENT_EPOCH - 3600))  # 1 hour ago
+            if date --version >/dev/null 2>&1; then
+              END_TIME=$(date -u -d "@$CURRENT_EPOCH" +%Y-%m-%dT%H:%M:%S)
+              START_TIME=$(date -u -d "@$START_EPOCH" +%Y-%m-%dT%H:%M:%S)
+            else
+              END_TIME=$(date -u -r "$CURRENT_EPOCH" +%Y-%m-%dT%H:%M:%S)
+              START_TIME=$(date -u -r "$START_EPOCH" +%Y-%m-%dT%H:%M:%S)
+            fi
             aws cloudwatch get-metric-statistics \
               --namespace ClaimStatusAPI \
               --metric-name BedrockInferenceDuration \
@@ -304,13 +324,24 @@ jobs:
             echo "# View Lambda autoscaler logs"
             echo "aws logs tail /aws/lambda/${{ env.LAMBDA_FUNCTION }} --follow"
             echo ""
-            echo "# Check Bedrock metrics"
+            echo "# Check Bedrock metrics (Linux/GitHub Actions)"
+            echo "EPOCH=\$(date +%s)"
             echo "aws cloudwatch get-metric-statistics \\"
             echo "  --namespace ClaimStatusAPI \\"
             echo "  --metric-name BedrockInferenceDuration \\"
             echo "  --dimensions Name=Service,Value=claim-status-api \\"
-            echo "  --start-time \$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%S) \\"
-            echo "  --end-time \$(date -u +%Y-%m-%dT%H:%M:%S) \\"
+            echo "  --start-time \$(date -u -d \"@\$((EPOCH - 3600))\" +%Y-%m-%dT%H:%M:%S) \\"
+            echo "  --end-time \$(date -u -d \"@\$EPOCH\" +%Y-%m-%dT%H:%M:%S) \\"
+            echo "  --period 300 --statistics Average,Maximum"
+            echo ""
+            echo "# Check Bedrock metrics (macOS)"
+            echo "EPOCH=\$(date +%s)"
+            echo "aws cloudwatch get-metric-statistics \\"
+            echo "  --namespace ClaimStatusAPI \\"
+            echo "  --metric-name BedrockInferenceDuration \\"
+            echo "  --dimensions Name=Service,Value=claim-status-api \\"
+            echo "  --start-time \$(date -u -r \"\$((EPOCH - 3600))\" +%Y-%m-%dT%H:%M:%S) \\"
+            echo "  --end-time \$(date -u -r \"\$EPOCH\" +%Y-%m-%dT%H:%M:%S) \\"
             echo "  --period 300 --statistics Average,Maximum"
             echo ""
             echo "# Test API endpoint"
