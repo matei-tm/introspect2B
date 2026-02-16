@@ -215,10 +215,15 @@ Ensure the response is valid JSON that can be parsed.";
             await _cloudWatch.PutMetricDataAsync(request);
             _logger.LogDebug("Published Bedrock metric: {Duration}ms for model {Model}", durationMs, modelName);
         }
+        catch (Amazon.Runtime.AmazonServiceException ex)
+        {
+            // AWS service error (e.g., permissions, throttling)
+            _logger.LogWarning(ex, "Failed to publish Bedrock metrics to CloudWatch. Error: {ErrorCode} - {ErrorMessage}", ex.ErrorCode, ex.Message);
+        }
         catch (Exception ex)
         {
             // Don't fail the request if metrics publishing fails
-            _logger.LogWarning(ex, "Failed to publish Bedrock metrics to CloudWatch");
+            _logger.LogWarning(ex, "Failed to publish Bedrock metrics to CloudWatch: {ErrorMessage}", ex.Message);
         }
     }
 

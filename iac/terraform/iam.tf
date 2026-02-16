@@ -166,6 +166,14 @@ data "aws_iam_policy_document" "app_service_account" {
     ]
     resources = ["*"]
   }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "cloudwatch:PutMetricData"
+    ]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_policy" "app_service_account" {
