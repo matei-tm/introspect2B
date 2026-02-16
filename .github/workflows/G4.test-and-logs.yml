@@ -8,7 +8,9 @@ env:
   AWS_REGION: us-east-1
   EKS_CLUSTER_NAME: materclaims-cluster
   NAMESPACE: materclaims
+  DEPLOYMENT_NAME: claim-status-api
   CLOUDWATCH_NAMESPACE: amazon-cloudwatch
+  LAMBDA_FUNCTION: materclaims-cluster-intelligent-autoscaler
 
 jobs:
   test-and-logs:
@@ -34,36 +36,153 @@ jobs:
           aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
 
       - name: Verify cluster access
-        run: kubectl cluster-info
+        run: |
+          echo "## 🔍 Cluster Information" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          kubectl cluster-info | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Check deployment status
+        id: deployment
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          kubectl get deployments -n ${{ env.NAMESPACE }} -o wide | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          # Check if deployment is ready
+          READY=$(kubectl get deployment ${{ env.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }} -o jsonpath='{.status.readyReplicas}')
+          DESIRED=$(kubectl get deployment ${{ env.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.replicas}')
+          
+          if [ "$READY" = "$DESIRED" ]; then
+            echo "✅ Deployment ready: $READY/$DESIRED pods" | tee -a $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Deployment not fully ready: $READY/$DESIRED pods" | tee -a $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Check pod status
         id: pods
         run: |
-          echo "## 📊 Pod Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📦 Pod Details" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          kubectl get pods -n ${{ env.NAMESPACE }} | tee -a $GITHUB_STEP_SUMMARY
+          kubectl get pods -n ${{ env.NAMESPACE }} -o wide | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pod Resource Usage" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          kubectl top pods -n ${{ env.NAMESPACE }} 2>&1 | tee -a $GITHUB_STEP_SUMMARY || echo "Metrics not available yet" | tee -a $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Check CloudWatch Container Insights
-        id: cloudwatch
+      - name: Test API health endpoint
+        id: api-health
+        continue-on-error: true
         run: |
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📊 CloudWatch Container Insights Status" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          kubectl get pods -n ${{ env.CLOUDWATCH_NAMESPACE }} | tee -a $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "## 🏥 API Health Check" >> $GITHUB_STEP_SUMMARY
+          
+          # Get LoadBalancer URL
+          LB_URL=$(kubectl get service ${{ env.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          
+          if [ -n "$LB_URL" ]; then
+            echo "LoadBalancer URL: http://$LB_URL" | tee -a $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            curl -s -o /dev/null -w "HTTP Status: %{http_code}\nResponse Time: %{time_total}s\n" "http://$LB_URL/health" | tee -a $GITHUB_STEP_SUMMARY || echo "Health endpoint not responding" | tee -a $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ LoadBalancer not ready yet" | tee -a $GITHUB_STEP_SUMMARY
+          fi
 
-
-
-      - name: Collect claims service logs
-        id: claims-logs
+      - name: Check Bedrock integration logs
+        id: bedrock-logs
         run: |
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📝 Claims Service Logs" >> $GITHUB_STEP_SUMMARY
+          echo "## 🤖 Bedrock Integration Logs" >> $GITHUB_STEP_SUMMARY
+          echo "Searching for Bedrock invocations in application logs..." >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          kubectl logs -n ${{ env.NAMESPACE }} deployment/claims -c claims --tail=20 | tee -a $GITHUB_STEP_SUMMARY || echo "No logs available" | tee -a $GITHUB_STEP_SUMMARY
+          kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} --tail=100 | grep -i "bedrock\|invoke\|claude" | tail -20 | tee -a $GITHUB_STEP_SUMMARY || echo "No Bedrock logs found in recent activity" | tee -a $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
+      - name: Check Bedrock CloudWatch metrics
+        id: bedrock-metrics
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Bedrock Metrics (Last 10 Minutes)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          # Get Bedrock inference duration metrics
+          BEDROCK_METRICS=$(aws cloudwatch get-metric-statistics \
+            --namespace ClaimStatusAPI \
+            --metric-name BedrockInferenceDuration \
+            --dimensions Name=Service,Value=claim-status-api Name=Model,Value=claude-3-haiku \
+            --start-time $(date -u -d '10 minutes ago' +%Y-%m-%dT%H:%M:%S) \
+            --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
+            --period 300 \
+            --statistics Average,Maximum,SampleCount \
+            --query 'Datapoints[*].[Timestamp,Average,Maximum,SampleCount]' \
+            --output text 2>&1)
+          
+          if [ -n "$BEDROCK_METRICS" ] && [ "$BEDROCK_METRICS" != "None" ]; then
+            echo "$BEDROCK_METRICS" | tee -a $GITHUB_STEP_SUMMARY
+          else
+            echo "No Bedrock metrics available in the last 10 minutes" | tee -a $GITHUB_STEP_SUMMARY
+            echo "This is normal if no API calls with Bedrock were made recently" | tee -a $GITHUB_STEP_SUMMARY
+          fi
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Check intelligent autoscaler logs
+        id: autoscaler-logs
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🧠 Intelligent Autoscaler Activity" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          # Get recent Lambda execution logs
+          aws logs tail /aws/lambda/${{ env.LAMBDA_FUNCTION }} \
+            --since 10m \
+            --format short \
+            --filter-pattern '{ $.decision.action = * }' 2>&1 | head -50 | tee -a $GITHUB_STEP_SUMMARY || echo "No recent autoscaler activity" | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Bedrock-Related Scaling Decisions" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          aws logs filter-log-events \
+            --log-group-name /aws/lambda/${{ env.LAMBDA_FUNCTION }} \
+            --start-time $(($(date +%s) - 600))000 \
+            --filter-pattern 'Bedrock' \
+            --query 'events[*].message' \
+            --output text 2>&1 | head -20 | tee -a $GITHUB_STEP_SUMMARY || echo "No Bedrock-related scaling decisions" | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Check Container Insights status
+        id: container-insights
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Container Insights Status" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          kubectl get pods -n ${{ env.CLOUDWATCH_NAMESPACE }} -o wide | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Container Insights Log Groups" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          aws logs describe-log-groups \
+            --log-group-name-prefix "/aws/containerinsights/${{ env.EKS_CLUSTER_NAME }}" \
+            --query 'logGroups[*].[logGroupName,storedBytes]' \
+            --output table | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Collect application logs
+        id: app-logs
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📝 Application Logs (Last 50 Lines)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} --tail=50 | tee -a $GITHUB_STEP_SUMMARY || echo "No logs available" | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Collect CloudWatch agent logs
         id: cw-agent-logs
@@ -85,62 +204,122 @@ jobs:
           kubectl logs -n ${{ env.CLOUDWATCH_NAMESPACE }} daemonset/fluent-bit --tail=20 | tee -a $GITHUB_STEP_SUMMARY || echo "Fluent Bit logs not available" | tee -a $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Generate logs deliverable
+      - name: Generate comprehensive logs deliverable
         run: |
           mkdir -p logs
+          TIMESTAMP=$(date -u '+%Y%m%d-%H%M%S')
+          
           {
-            echo "# EKS Materdemo Microservices - Test Results and Logs"
+            echo "# Claim Status API - Test Results and Logs"
             echo ""
             echo "**Generated:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
             echo "**Cluster:** ${{ env.EKS_CLUSTER_NAME }}"
             echo "**Region:** ${{ env.AWS_REGION }}"
+            echo "**Deployment:** ${{ env.DEPLOYMENT_NAME }}"
             echo ""
             
-            echo "## 📊 Pod Status"
+            echo "## 📊 Deployment Status"
             echo '```'
-            kubectl get pods -n ${{ env.NAMESPACE }}
+            kubectl get deployments,services -n ${{ env.NAMESPACE }} -o wide
             echo '```'
             echo ""
             
-            echo "## 📊 CloudWatch Container Insights Status"
+            echo "## 📦 Pod Status"
+            echo '```'
+            kubectl get pods -n ${{ env.NAMESPACE }} -o wide
+            kubectl describe pods -n ${{ env.NAMESPACE }} 2>&1 | head -100
+            echo '```'
+            echo ""
+            
+            echo "## 🤖 Bedrock Integration Analysis"
+            echo '```'
+            echo "=== Application Logs (Bedrock mentions) ==="
+            kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} --tail=200 | grep -i "bedrock\|invoke\|claude" || echo "No Bedrock activity found"
+            echo ""
+            echo "=== CloudWatch Bedrock Metrics (Last 1 Hour) ==="
+            aws cloudwatch get-metric-statistics \
+              --namespace ClaimStatusAPI \
+              --metric-name BedrockInferenceDuration \
+              --dimensions Name=Service,Value=claim-status-api Name=Model,Value=claude-3-haiku \
+              --start-time $(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%S) \
+              --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
+              --period 300 \
+              --statistics Average,Maximum,Minimum,SampleCount \
+              --output table 2>&1 || echo "No Bedrock metrics available"
+            echo '```'
+            echo ""
+            
+            echo "## 🧠 Intelligent Autoscaler Activity"
+            echo '```'
+            echo "=== Lambda Function Status ==="
+            aws lambda get-function --function-name ${{ env.LAMBDA_FUNCTION }} --query 'Configuration.[FunctionName,LastModified,State]' --output table
+            echo ""
+            echo "=== Recent Executions (Last 30 Minutes) ==="
+            aws logs tail /aws/lambda/${{ env.LAMBDA_FUNCTION }} --since 30m --format short 2>&1 | head -100
+            echo ""
+            echo "=== Scaling Decisions (Non-None Actions) ==="
+            aws logs filter-log-events \
+              --log-group-name /aws/lambda/${{ env.LAMBDA_FUNCTION }} \
+              --start-time $(($(date +%s) - 1800))000 \
+              --filter-pattern '{ $.decision.action != "none" }' \
+              --query 'events[*].message' \
+              --output text 2>&1 | head -50
+            echo '```'
+            echo ""
+            
+            echo "## 📊 CloudWatch Container Insights"
             echo '```'
             kubectl get pods -n ${{ env.CLOUDWATCH_NAMESPACE }}
+            echo ""
+            echo "=== Log Groups ==="
+            aws logs describe-log-groups \
+              --log-group-name-prefix "/aws/containerinsights/${{ env.EKS_CLUSTER_NAME }}" \
+              --query 'logGroups[*].[logGroupName,storedBytes]' \
+              --output table
+            echo ""
+            echo "=== Recent Container Insights Logs ==="
+            aws logs tail "/aws/containerinsights/${{ env.EKS_CLUSTER_NAME }}/application" \
+              --since 10m --format short 2>&1 | head -50 || echo "No recent logs"
             echo '```'
             echo ""
             
-            echo "## 🔧 Materdemo Components"
+            echo "## 📝 Full Application Logs"
             echo '```'
-            kubectl get components -n ${{ env.NAMESPACE }}
-            echo '```'
-            echo ""
-            
-            echo "## 📝 Claims Service Logs"
-            echo '```'
-            kubectl logs -n ${{ env.NAMESPACE }} deployment/claims -c claims --tail=50 || echo "No logs available"
+            kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} --tail=200 || echo "No logs available"
             echo '```'
             echo ""
             
-                
-            echo "## 📊 CloudWatch Agent Logs"
-            echo '```'
-            kubectl logs -n ${{ env.CLOUDWATCH_NAMESPACE }} daemonset/cloudwatch-agent --tail=50 || echo "CloudWatch agent logs not available"
-            echo '```'
-            echo ""
-            
-            echo "## 📊 Fluent Bit Logs"
-            echo '```'
-            kubectl logs -n ${{ env.CLOUDWATCH_NAMESPACE }} daemonset/fluent-bit --tail=50 || echo "Fluent Bit logs not available"
-            echo '```'
-            echo ""
-            
-            echo "## 💡 Useful Commands"
+            echo "## 🔧 Troubleshooting Commands"
             echo '```bash'
-            echo "# Follow logs in real-time:"
-            echo "kubectl logs -f -n ${{ env.NAMESPACE }} deployment/claims -c claims"
-            echo "kubectl logs -f -n ${{ env.CLOUDWATCH_NAMESPACE }} daemonset/cloudwatch-agent"
-            echo "kubectl logs -f -n ${{ env.CLOUDWATCH_NAMESPACE }} daemonset/fluent-bit"
+            echo "# Update kubeconfig"
+            echo "aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}"
+            echo ""
+            echo "# Check deployment status"
+            echo "kubectl get deployments,pods,services -n ${{ env.NAMESPACE }} -o wide"
+            echo ""
+            echo "# Follow application logs in real-time"
+            echo "kubectl logs -f -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }}"
+            echo ""
+            echo "# Check for Bedrock invocations"
+            echo "kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} | grep -i bedrock"
+            echo ""
+            echo "# View Lambda autoscaler logs"
+            echo "aws logs tail /aws/lambda/${{ env.LAMBDA_FUNCTION }} --follow"
+            echo ""
+            echo "# Check Bedrock metrics"
+            echo "aws cloudwatch get-metric-statistics \\"
+            echo "  --namespace ClaimStatusAPI \\"
+            echo "  --metric-name BedrockInferenceDuration \\"
+            echo "  --dimensions Name=Service,Value=claim-status-api \\"
+            echo "  --start-time \$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%S) \\"
+            echo "  --end-time \$(date -u +%Y-%m-%dT%H:%M:%S) \\"
+            echo "  --period 300 --statistics Average,Maximum"
+            echo ""
+            echo "# Test API endpoint"
+            echo "LB_URL=\$(kubectl get service ${{ env.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+            echo "curl http://\$LB_URL/health"
             echo '```'
-          } > logs/test-results-$(date -u '+%Y%m%d-%H%M%S').md
+          } > logs/test-results-${TIMESTAMP}.md
 
       - name: Upload logs artifact
         uses: actions/upload-artifact@v4
@@ -154,16 +333,39 @@ jobs:
         run: |
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "## ✅ Test Complete" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Test and Log Collection Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📦 Logs artifact uploaded as: \`test-logs-${{ github.run_number }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "📦 **Logs artifact:** \`test-logs-${{ github.run_number }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Quick Access Commands" >> $GITHUB_STEP_SUMMARY
+          echo "### Key Findings" >> $GITHUB_STEP_SUMMARY
+          
+          # Check deployment health
+          READY=$(kubectl get deployment ${{ env.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }} -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+          DESIRED=$(kubectl get deployment ${{ env.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
+          
+          if [ "$READY" = "$DESIRED" ] && [ "$READY" != "0" ]; then
+            echo "- ✅ Deployment healthy: $READY/$DESIRED pods ready" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ⚠️ Deployment issues: $READY/$DESIRED pods ready" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Check Container Insights
+          CI_PODS=$(kubectl get pods -n ${{ env.CLOUDWATCH_NAMESPACE }} --no-headers 2>/dev/null | wc -l)
+          echo "- 📊 Container Insights: $CI_PODS pods running" >> $GITHUB_STEP_SUMMARY
+          
+          # Check Lambda
+          LAMBDA_STATE=$(aws lambda get-function --function-name ${{ env.LAMBDA_FUNCTION }} --query 'Configuration.State' --output text 2>/dev/null || echo "Unknown")
+          echo "- 🧠 Intelligent Autoscaler: $LAMBDA_STATE" >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Quick Access" >> $GITHUB_STEP_SUMMARY
           echo '```bash' >> $GITHUB_STEP_SUMMARY
-          echo "# Update kubeconfig" >> $GITHUB_STEP_SUMMARY
-          echo "aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "# View application logs" >> $GITHUB_STEP_SUMMARY
+          echo "kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} --tail=50" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "# Check status" >> $GITHUB_STEP_SUMMARY
-          echo "kubectl get pods -n ${{ env.NAMESPACE }}" >> $GITHUB_STEP_SUMMARY
-          echo "kubectl get pods -n ${{ env.CLOUDWATCH_NAMESPACE }}" >> $GITHUB_STEP_SUMMARY
+          echo "# Check Bedrock activity" >> $GITHUB_STEP_SUMMARY
+          echo "kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} | grep -i bedrock" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# View autoscaler decisions" >> $GITHUB_STEP_SUMMARY
+          echo "aws logs tail /aws/lambda/${{ env.LAMBDA_FUNCTION }} --since 10m" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
