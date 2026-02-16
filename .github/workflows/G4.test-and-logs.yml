@@ -199,16 +199,6 @@ jobs:
           kubectl logs -n ${{ env.CLOUDWATCH_NAMESPACE }} daemonset/cloudwatch-agent --tail=20 | tee -a $GITHUB_STEP_SUMMARY || echo "CloudWatch agent logs not available" | tee -a $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Collect Fluent Bit logs
-        id: fluent-bit-logs
-        continue-on-error: true
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📊 Fluent Bit Logs" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          kubectl logs -n ${{ env.CLOUDWATCH_NAMESPACE }} daemonset/fluent-bit --tail=20 | tee -a $GITHUB_STEP_SUMMARY || echo "Fluent Bit logs not available" | tee -a $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-
       - name: Generate comprehensive logs deliverable
         run: |
           mkdir -p logs
