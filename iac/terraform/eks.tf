@@ -76,26 +76,8 @@ module "eks" {
     amazon-cloudwatch-observability = {
       most_recent = true
       configuration_values = jsonencode({
-        agent = {
-          config = {
-            logs = {
-              metrics_collected = {
-                kubernetes = {
-                  enhanced_container_insights = true
-                }
-              }
-            }
-            metrics = {
-              namespace = "ContainerInsights"
-              metrics_collected = {
-                kubernetes = {
-                  cluster_name                = var.cluster_name
-                  enhanced_container_insights = true
-                  metrics_collection_interval = 60
-                }
-              }
-            }
-          }
+        containerLogs = {
+          enabled = true
         }
       })
     }
