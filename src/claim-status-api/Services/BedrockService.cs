@@ -1,10 +1,13 @@
 using Amazon.BedrockRuntime;
 using Amazon.BedrockRuntime.Model;
+using Amazon.CloudWatch;
+using Amazon.CloudWatch.Model;
 using ClaimStatusApi.Models;
 using ClaimStatusApi.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 
@@ -13,14 +16,16 @@ namespace ClaimStatusApi.Services;
 public class BedrockService : IBedrockService
 {
     private readonly IAmazonBedrockRuntime _bedrockRuntime;
+    private readonly IAmazonCloudWatch _cloudWatch;
     private readonly ILogger<BedrockService> _logger;
     private readonly string _modelId;
     private readonly string _inferenceProfileId;
     private readonly string _inferenceProfileArn;
 
-    public BedrockService(IAmazonBedrockRuntime bedrockRuntime, ILogger<BedrockService> logger, IConfiguration config)
+    public BedrockService(IAmazonBedrockRuntime bedrockRuntime, IAmazonCloudWatch cloudWatch, ILogger<BedrockService> logger, IConfiguration config)
     {
         _bedrockRuntime = bedrockRuntime;
+        _cloudWatch = cloudWatch;
         _logger = logger;
         _modelId = config["AWS:Bedrock:ModelId"] ?? "anthropic.claude-3-haiku-20240307-v1:0";
         _inferenceProfileId = config["AWS:Bedrock:InferenceProfileId"] ?? string.Empty;
@@ -29,6 +34,7 @@ public class BedrockService : IBedrockService
 
     public async Task<ClaimSummary> GenerateSummaryAsync(string claimId, string claimNotes)
     {
+        var stopwatch = Stopwatch.StartNew();
         try
         {
             var prompt = BuildPrompt(claimNotes);
@@ -38,14 +44,21 @@ public class BedrockService : IBedrockService
             _logger.LogInformation("Invoking Bedrock target {Target} for claim {ClaimId}", target, claimId);
             var responseText = await InvokeConverseAsync(prompt);
             
+            stopwatch.Stop();
+            var durationMs = stopwatch.ElapsedMilliseconds;
+            
+            // Publish CloudWatch metric
+            await PublishBedrockMetricAsync(durationMs);
+            
             var summary = ParseSummaryResponse(responseText, claimId);
-            _logger.LogInformation($"Successfully generated summary for claim {claimId}");
+            _logger.LogInformation("Successfully generated summary for claim {ClaimId} in {Duration}ms", claimId, durationMs);
             
             return summary;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error generating summary for claim {claimId} using Bedrock");
+            stopwatch.Stop();
+            _logger.LogError(ex, $"Error generating summary for claim {claimId} using Bedrock after {stopwatch.ElapsedMilliseconds}ms");
             throw;
         }
     }
@@ -172,5 +185,58 @@ Ensure the response is valid JSON that can be parsed.";
 
         // As a last resort, return the original trimmed text
         return trimmed;
+    }
+
+    private async Task PublishBedrockMetricAsync(long durationMs)
+    {
+        try
+        {
+            var modelName = ExtractModelName(_modelId);
+            var request = new PutMetricDataRequest
+            {
+                Namespace = "ClaimStatusAPI",
+                MetricData = new List<MetricDatum>
+                {
+                    new MetricDatum
+                    {
+                        MetricName = "BedrockInferenceDuration",
+                        Value = durationMs,
+                        Unit = StandardUnit.Milliseconds,
+                        Timestamp = DateTime.UtcNow,
+                        Dimensions = new List<Dimension>
+                        {
+                            new Dimension { Name = "Service", Value = "claim-status-api" },
+                            new Dimension { Name = "Model", Value = modelName }
+                        }
+                    }
+                }
+            };
+
+            await _cloudWatch.PutMetricDataAsync(request);
+            _logger.LogDebug("Published Bedrock metric: {Duration}ms for model {Model}", durationMs, modelName);
+        }
+        catch (Exception ex)
+        {
+            // Don't fail the request if metrics publishing fails
+            _logger.LogWarning(ex, "Failed to publish Bedrock metrics to CloudWatch");
+        }
+    }
+
+    private static string ExtractModelName(string modelId)
+    {
+        // Extract simple model name for metrics dimensions
+        // e.g., "anthropic.claude-3-haiku-20240307-v1:0" -> "claude-3-haiku"
+        // e.g., "amazon.nova-lite-v1:0" -> "nova-lite"
+        if (modelId.Contains("claude-3-haiku"))
+            return "claude-3-haiku";
+        if (modelId.Contains("nova-lite"))
+            return "nova-lite";
+        if (modelId.Contains("nova-pro"))
+            return "nova-pro";
+        if (modelId.Contains("nova-micro"))
+            return "nova-micro";
+        
+        // Default: return the full modelId
+        return modelId;
     }
 }

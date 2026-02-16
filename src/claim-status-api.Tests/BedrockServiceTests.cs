@@ -23,7 +23,8 @@ public class BedrockServiceTests
         }).Build();
         var logger = Mock.Of<ILogger<BedrockService>>();
         var fakeRuntime = Mock.Of<Amazon.BedrockRuntime.IAmazonBedrockRuntime>();
-        return new BedrockService(fakeRuntime, logger, config);
+        var fakeCloudWatch = Mock.Of<Amazon.CloudWatch.IAmazonCloudWatch>();
+        return new BedrockService(fakeRuntime, fakeCloudWatch, logger, config);
     }
 
     [TestMethod]
@@ -124,6 +125,7 @@ public class BedrockServiceTests
 
         var logger = Mock.Of<ILogger<BedrockService>>();
         var runtimeMock = new Mock<Amazon.BedrockRuntime.IAmazonBedrockRuntime>();
+        var cloudWatchMock = Mock.Of<Amazon.CloudWatch.IAmazonCloudWatch>();
         Amazon.BedrockRuntime.Model.ConverseRequest? captured = null;
         runtimeMock.Setup(r => r.ConverseAsync(It.IsAny<Amazon.BedrockRuntime.Model.ConverseRequest>(), It.IsAny<CancellationToken>()))
             .Callback<Amazon.BedrockRuntime.Model.ConverseRequest, CancellationToken>((req, ct) => captured = req)
@@ -141,7 +143,7 @@ public class BedrockServiceTests
                 }
             });
 
-        var service = new BedrockService(runtimeMock.Object, logger, cfg);
+        var service = new BedrockService(runtimeMock.Object, cloudWatchMock, logger, cfg);
         var summary = await service.GenerateSummaryAsync("CID", "notes");
 
         Assert.IsNotNull(captured);
@@ -160,6 +162,7 @@ public class BedrockServiceTests
 
         var logger = Mock.Of<ILogger<BedrockService>>();
         var runtimeMock = new Mock<Amazon.BedrockRuntime.IAmazonBedrockRuntime>();
+        var cloudWatchMock = Mock.Of<Amazon.CloudWatch.IAmazonCloudWatch>();
         Amazon.BedrockRuntime.Model.ConverseRequest? captured = null;
         runtimeMock.Setup(r => r.ConverseAsync(It.IsAny<Amazon.BedrockRuntime.Model.ConverseRequest>(), It.IsAny<CancellationToken>()))
             .Callback<Amazon.BedrockRuntime.Model.ConverseRequest, CancellationToken>((req, ct) => captured = req)
@@ -177,7 +180,7 @@ public class BedrockServiceTests
                 }
             });
 
-        var service = new BedrockService(runtimeMock.Object, logger, cfg);
+        var service = new BedrockService(runtimeMock.Object, cloudWatchMock, logger, cfg);
         var summary = await service.GenerateSummaryAsync("CID", "notes");
 
         Assert.IsNotNull(captured);
@@ -195,6 +198,7 @@ public class BedrockServiceTests
 
         var logger = Mock.Of<ILogger<BedrockService>>();
         var runtimeMock = new Mock<Amazon.BedrockRuntime.IAmazonBedrockRuntime>();
+        var cloudWatchMock = Mock.Of<Amazon.CloudWatch.IAmazonCloudWatch>();
         Amazon.BedrockRuntime.Model.ConverseRequest? captured = null;
         runtimeMock.Setup(r => r.ConverseAsync(It.IsAny<Amazon.BedrockRuntime.Model.ConverseRequest>(), It.IsAny<CancellationToken>()))
             .Callback<Amazon.BedrockRuntime.Model.ConverseRequest, CancellationToken>((req, ct) => captured = req)
@@ -212,7 +216,7 @@ public class BedrockServiceTests
                 }
             });
 
-        var service = new BedrockService(runtimeMock.Object, logger, cfg);
+        var service = new BedrockService(runtimeMock.Object, cloudWatchMock, logger, cfg);
         var summary = await service.GenerateSummaryAsync("CID", "notes");
 
         Assert.IsNotNull(captured);
@@ -226,6 +230,7 @@ public class BedrockServiceTests
         var cfg = new ConfigurationBuilder().AddInMemoryCollection().Build();
         var logger = Mock.Of<ILogger<BedrockService>>();
         var runtimeMock = new Mock<Amazon.BedrockRuntime.IAmazonBedrockRuntime>();
+        var cloudWatchMock = Mock.Of<Amazon.CloudWatch.IAmazonCloudWatch>();
         runtimeMock.Setup(r => r.ConverseAsync(It.IsAny<Amazon.BedrockRuntime.Model.ConverseRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Amazon.BedrockRuntime.Model.ConverseResponse
             {
@@ -238,7 +243,7 @@ public class BedrockServiceTests
                 }
             });
 
-        var service = new BedrockService(runtimeMock.Object, logger, cfg);
+        var service = new BedrockService(runtimeMock.Object, cloudWatchMock, logger, cfg);
         await Assert.ThrowsExceptionAsync<System.Collections.Generic.KeyNotFoundException>(() => service.GenerateSummaryAsync("CID", "notes"));
     }
 
@@ -248,6 +253,7 @@ public class BedrockServiceTests
         var cfg = new ConfigurationBuilder().AddInMemoryCollection().Build();
         var logger = Mock.Of<ILogger<BedrockService>>();
         var runtimeMock = new Mock<Amazon.BedrockRuntime.IAmazonBedrockRuntime>();
+        var cloudWatchMock = Mock.Of<Amazon.CloudWatch.IAmazonCloudWatch>();
         // Simulate response with no Output/Message to hit the fallback branch
         runtimeMock.Setup(r => r.ConverseAsync(It.IsAny<Amazon.BedrockRuntime.Model.ConverseRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Amazon.BedrockRuntime.Model.ConverseResponse
@@ -255,7 +261,7 @@ public class BedrockServiceTests
                 Output = null
             });
 
-        var service = new BedrockService(runtimeMock.Object, logger, cfg);
+        var service = new BedrockService(runtimeMock.Object, cloudWatchMock, logger, cfg);
         await Assert.ThrowsExceptionAsync<System.Collections.Generic.KeyNotFoundException>(() => service.GenerateSummaryAsync("CID", "notes"));
     }
 }

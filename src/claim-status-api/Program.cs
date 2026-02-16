@@ -1,6 +1,7 @@
 using Amazon.DynamoDBv2;
 using Amazon.S3;
 using Amazon.BedrockRuntime;
+using Amazon.CloudWatch;
 using Amazon.Extensions.NETCore.Setup;
 using ClaimStatusApi.Services;
 using ClaimStatusApi.Interfaces;
@@ -21,6 +22,7 @@ builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
 builder.Services.AddAWSService<IAmazonDynamoDB>();
 builder.Services.AddAWSService<IAmazonS3>();
 builder.Services.AddAWSService<IAmazonBedrockRuntime>();
+builder.Services.AddAWSService<IAmazonCloudWatch>();
 
 // Add custom services
 builder.Services.AddScoped<IDynamoDbService, DynamoDbService>();
