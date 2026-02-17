@@ -104,7 +104,7 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
           
           # Get logs and filter for actual Bedrock activity (not attack attempts)
-          BEDROCK_LOGS=$(kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} 2>&1 | grep -iE "bedrock|nova-lite|nova-pro|claude-3|BedrockInferenceDuration|InvokeModel" )
+          BEDROCK_LOGS=$(kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} --tail 20000 2>&1 | grep -iE "bedrock|nova-lite|nova-pro|claude-3|BedrockInferenceDuration|InvokeModel" )
           echo "${BEDROCK_LOGS}"
           if [ -n "${BEDROCK_LOGS}" ]; then
             echo "${BEDROCK_LOGS}" | tee -a $GITHUB_STEP_SUMMARY
@@ -115,50 +115,6 @@ jobs:
           
           echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Check Bedrock CloudWatch metrics
-        id: bedrock-metrics
-        continue-on-error: true
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📊 Bedrock Metrics (Last 10 Minutes)" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          
-          # Calculate timestamps using epoch time (portable across Linux and macOS)
-          CURRENT_EPOCH=$(date +%s)
-          START_EPOCH=$((CURRENT_EPOCH - 600))  # 10 minutes ago
-          
-          # Convert to ISO 8601 format for AWS CloudWatch
-          if date --version >/dev/null 2>&1; then
-            # GNU date (Linux, GitHub Actions)
-            END_TIME=$(date -u -d "@$CURRENT_EPOCH" +%Y-%m-%dT%H:%M:%S)
-            START_TIME=$(date -u -d "@$START_EPOCH" +%Y-%m-%dT%H:%M:%S)
-          else
-            # BSD date (macOS)
-            END_TIME=$(date -u -r "$CURRENT_EPOCH" +%Y-%m-%dT%H:%M:%S)
-            START_TIME=$(date -u -r "$START_EPOCH" +%Y-%m-%dT%H:%M:%S)
-          fi
-          
-          echo "Debug: START_TIME=$START_TIME, END_TIME=$END_TIME" | tee -a $GITHUB_STEP_SUMMARY
-          
-          # Get Bedrock inference duration metrics
-          BEDROCK_METRICS=$(aws cloudwatch get-metric-statistics \
-            --namespace ClaimStatusAPI \
-            --metric-name BedrockInferenceDuration \
-            --dimensions Name=Service,Value=claim-status-api Name=Model,Value=claude-3-haiku \
-            --start-time "$START_TIME" \
-            --end-time "$END_TIME" \
-            --period 300 \
-            --statistics Average,Maximum,SampleCount \
-            --query 'Datapoints[*].[Timestamp,Average,Maximum,SampleCount]' \
-            --output text 2>&1)
-          
-          if [ -n "$BEDROCK_METRICS" ] && [ "$BEDROCK_METRICS" != "None" ] && ! echo "$BEDROCK_METRICS" | grep -q "An error occurred"; then
-            echo "$BEDROCK_METRICS" | tee -a $GITHUB_STEP_SUMMARY
-          else
-            echo "No Bedrock metrics available in the last 10 minutes" | tee -a $GITHUB_STEP_SUMMARY
-            echo "This is normal if no API calls with Bedrock were made recently" | tee -a $GITHUB_STEP_SUMMARY
-          fi
-          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Check intelligent autoscaler logs
         id: autoscaler-logs
