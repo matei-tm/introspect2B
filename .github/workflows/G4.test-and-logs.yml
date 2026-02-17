@@ -104,7 +104,7 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
           
           # Get logs and filter for actual Bedrock activity (not attack attempts)
-          BEDROCK_LOGS=$(kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} --tail 20000 2>&1 | grep -iE "bedrock|nova-lite|nova-pro|claude-3|BedrockInferenceDuration|InvokeModel" )
+          BEDROCK_LOGS=$(kubectl logs -n ${{ env.NAMESPACE }} deployment/${{ env.DEPLOYMENT_NAME }} --tail 20000 2>&1 | grep -iE "bedrock|nova-lite|nova-pro|claude-3|BedrockInferenceDuration|InvokeModel" | head -5 )
           echo "${BEDROCK_LOGS}"
           if [ -n "${BEDROCK_LOGS}" ]; then
             echo "${BEDROCK_LOGS}" | tee -a $GITHUB_STEP_SUMMARY
