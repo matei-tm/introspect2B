@@ -17,21 +17,22 @@ phases:
   pre_build:
     commands:
       - echo "Installing test dependencies..."
-      - dotnet restore src/claim-status-api/claim-status-api.csproj
+      - dotnet restore introspect2B.sln
       - echo "Running code analysis..."
-      - dotnet build src/claim-status-api/claim-status-api.csproj --configuration Release
+      - dotnet build introspect2B.sln --configuration Release
 
   build:
     commands:
-      - echo "Running unit tests..."
-      - dotnet test src/claim-status-api/claim-status-api.csproj --configuration Release --logger "console;verbosity=detailed" --collect:"XPlat Code Coverage"
+      - echo "Running unit tests with code coverage..."
+      - dotnet test introspect2B.sln --configuration Release --filter "TestCategory!=Integration" --logger "console;verbosity=detailed" --logger "trx" --collect:"XPlat Code Coverage" --results-directory test-results
       - echo "Running integration tests..."
-      - dotnet test src/claim-status-api/claim-status-api.csproj --configuration Release --filter "Category=Integration" || true
+      - dotnet test introspect2B.sln --configuration Release --filter "TestCategory=Integration" --logger "console;verbosity=detailed" --logger "trx" --results-directory test-results || true
 
   post_build:
     commands:
       - echo "Test execution completed"
-      - ls -la src/claim-status-api/
+      - echo "Test results location:"
+      - find test-results -type f -name "*.trx" -o -name "*.xml" 2>/dev/null || echo "No test results found"
 
 artifacts:
   files:
@@ -41,11 +42,11 @@ artifacts:
 reports:
   UnitTestReport:
     files:
-      - '**/TestResults/**/*.trx'
-    file-format: 'JUNITXML'
+      - 'test-results/**/*.trx'
+    file-format: 'VSTEST'
   CodeCoverageReport:
     files:
-      - '**/coverage.cobertura.xml'
+      - 'test-results/**/coverage.cobertura.xml'
     file-format: 'COBERTURAXML'
 
 cache:
