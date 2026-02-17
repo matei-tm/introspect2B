@@ -421,7 +421,7 @@ NOISE_FILTER_THRESHOLD = 0.05    # 5% noise filter
 
 ## References
 
-- [AI Autoscaling Instructions](../ai-autoscaling.instructions.md)
+- [AI Autoscaling Instructions](../instructions/ai-autoscaling.instructions.md)
 - [Intelligent Autoscaler Source Code](../../src/intelligent-autoscaler/)
 - [CloudWatch Container Insights](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContainerInsights.html)
 - [Amazon Bedrock Performance Guide](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-performance.html)

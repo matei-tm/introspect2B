@@ -306,7 +306,7 @@ Planned improvements:
 
 ## References
 
-- [AI Autoscaling Instructions](../ai-autoscaling.instructions.md)
+- [AI Autoscaling Instructions](../instructions/ai-autoscaling.instructions.md)
 - [Extended Architecture](../architecture/extended.md) - Deep dive into system design
 - [CloudWatch Container Insights](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContainerInsights.html)
 - [AWS Lambda Best Practices](https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html)

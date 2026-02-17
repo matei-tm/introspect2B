@@ -1,0 +1,14 @@
+# Evaluation Criteria
+
+| # | Criteria | Excellent (5) | Good (4) | Satisfactory (3) | Needs Improvement (1-2) |
+|---|----------|---------------|----------|------------------|-------------------------|
+| 1 | Understanding of the Problem | Clear articulation of business/technical challenges with context alignment | Adequate understanding with minor gaps | Basic articulation but misses nuances or business context | Misinterprets or overlooks core problem statement |
+| 2 | Architecture & Design | Scalable, modular architecture with justifications for tech choices | Mostly modular with reasonable design decisions | Partially modular, with some architectural flaws | Monolithic or fragmented architecture without rationale |
+| 3 | Use of GenAI Assistance | Integrated GenAI in planning, analysis, and simulation meaningfully | Limited GenAI integration (1-2 focused use cases) | GenAI used minimally or superficially | No GenAI usage or irrelevant application |
+| 4 | Modernization Strategy | Clear transformation plan (e.g., monolith → microservices, serverless transition) | Reasonable strategy with a few integration gaps | Basic strategy without transformation clarity | No visible modernization path |
+| 5 | Output Definition & Deliverables | Well-structured outputs aligned with case objectives and future vision | Outputs are relevant but not fully connected to future goals | Basic output; lacks consistency with objectives | Missing, vague, or irrelevant deliverables |
+| 6 | Security & Compliance Consideration | Adequately includes access control, data security, and compliance (e.g., HIPAA) | Security covered partially or superficially | Basic security mention but lacks relevance to industry context | Security missing or not addressed |
+| 7 | Scalability & Resilience Planning | Resilience patterns, failover plans, and scaling rules clearly defined | Scaling/resilience partially addressed | Mentioned vaguely without supporting detail | Not addressed |
+| 8 | Innovation or Creativity | Demonstrates unique insight or creative use of tech and GenAI | Some creative thinking visible | Mostly standard approach | Very basic or templated approach |
+| 9 | Presentation Quality | Clear, concise, visual, and professional; well-paced for audience | Mostly clear with minor gaps | Understandable but lacks visual or structural clarity | Disorganized or hard to follow |
+| 10 | Future Readiness / Vision | Future roadmap aligns with business needs and enables iterative GenAI adoption | Future vision is present but not fully actionable | Future potential mentioned vaguely | No vision for future steps |
