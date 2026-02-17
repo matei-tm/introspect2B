@@ -18,12 +18,12 @@ A cloud-native microservice demonstrating enterprise-grade architecture patterns
 
 ## 🎯 Overview
 
-**Introspect2B** provides a production-ready example of integrating generative AI into insurance claim processing workflows. The API retrieves claim information from DynamoDB, fetches detailed notes from S3, and uses Amazon Bedrock (Claude 3 Haiku) to generate contextual summaries for different stakeholder perspectives.
+**Introspect2B** provides a production-ready example of integrating generative AI into insurance claim processing workflows. The API retrieves claim information from DynamoDB, fetches detailed notes from S3, and uses Amazon Bedrock (Nova Lite) to generate contextual summaries for different stakeholder perspectives.
 
 ### Key Features
 
 ✅ **RESTful API** — Two endpoints for claim retrieval and AI-powered summarization  
-✅ **GenAI Integration** — Amazon Bedrock with Claude 3 Haiku for intelligent summaries  
+✅ **GenAI Integration** — Amazon Bedrock with Amazon Nova Lite for intelligent summaries  
 ✅ **Cloud-Native** — Kubernetes-first design with high availability  
 ✅ **Intelligent Autoscaling** — AI-workload-aware Lambda function for predictive scaling  
 ✅ **Security** — IRSA (IAM Roles for Service Accounts), least-privilege IAM  
@@ -50,7 +50,7 @@ graph LR
 - **API Layer**: Regional API Gateway with AWS_IAM authentication
 - **Compute**: Amazon EKS with 2-10 pod autoscaling
 - **Data Storage**: DynamoDB for claims, S3 for detailed notes
-- **AI/ML**: Amazon Bedrock (Claude 3 Haiku) for contextual summarization
+- **AI/ML**: Amazon Bedrock (Nova Lite) for contextual summarization
 - **Autoscaling**: Intelligent Lambda function with predictive scaling logic
 - **Observability**: CloudWatch Logs, Metrics, and Container Insights
 
@@ -111,7 +111,7 @@ Pre-configured CloudWatch Logs Insights queries for:
 |-------|-----------|
 | **API** | ASP.NET Core 10.0 (Minimal API) |
 | **Container Orchestration** | Amazon EKS 1.31 |
-| **AI/ML** | Amazon Bedrock (Claude 3 Haiku) |
+| **AI/ML** | Amazon Bedrock (Nova Lite) |
 | **Autoscaling** | AWS Lambda (Python 3.11) |
 | **Data Storage** | DynamoDB, S3 |
 | **API Gateway** | Amazon API Gateway (Regional) |

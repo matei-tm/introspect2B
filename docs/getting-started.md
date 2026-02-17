@@ -691,10 +691,10 @@ claim-status-api-xxxxxxxxxx-xxxxx   0/1     ImagePullBackOff   0          2m
    aws bedrock list-foundation-models --region us-east-1
    ```
 
-2. **Request access to Claude 3 Haiku**:
+2. **Request access to Amazon Nova Lite**:
    - Go to [Bedrock Console](https://console.aws.amazon.com/bedrock)
    - Navigate to "Model access"
-   - Request access to "Anthropic Claude 3 Haiku"
+   - Request access to "Amazon Nova Lite"
 
 3. **Check IAM role permissions**:
    ```bash

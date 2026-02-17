@@ -31,7 +31,7 @@ graph TD
     subgraph "AWS Services"
         DDB[(DynamoDB<br/>claims table)]
         S3[(S3 Bucket<br/>claim-notes)]
-        Bedrock[Amazon Bedrock<br/>Claude 3 Haiku]
+        Bedrock[Amazon Bedrock<br/>Nova Lite]
     end
     
     subgraph "Intelligent Autoscaling"
@@ -128,7 +128,7 @@ graph TD
 ### 4. AI/ML Layer
 
 **Amazon Bedrock**
-- **Model**: Claude 3 Haiku (`anthropic.claude-3-haiku-20240307-v1:0`)
+- **Model**: Amazon Nova Lite (`amazon.nova-lite-v1:0`)
 - **Use Case**: Generate contextual claim summaries
 - **Features**:
   - Multi-perspective summaries (customer, adjuster, overall)
@@ -205,7 +205,7 @@ Kubernetes ServiceAccount → IAM Role → AWS Services
 **IAM Policies**
 - **DynamoDB**: `GetItem`, `Scan` (read-only)
 - **S3**: `GetObject` (read-only on `claim-notes-*` bucket)
-- **Bedrock**: `InvokeModel` (Claude 3 Haiku only)
+- **Bedrock**: `InvokeModel` (Nova Lite only)
 - **CloudWatch**: `PutMetricData`, `GetMetricStatistics`
 
 ### Network Security
@@ -326,7 +326,7 @@ graph LR
 - **EKS**: t3.medium nodes (cost-effective for demo)
 - **DynamoDB**: On-demand (pay per request)
 - **S3**: Standard class (infrequent access for claim notes)
-- **Bedrock**: Pay per token (Claude 3 Haiku is cost-efficient)
+- **Bedrock**: Pay per token (Nova Lite is cost-efficient)
 - **Autoscaling**: Reduces idle pods during low traffic
 
 ## Disaster Recovery

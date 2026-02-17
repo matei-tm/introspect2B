@@ -4,12 +4,12 @@ A production-ready cloud-native microservice demonstrating enterprise-grade arch
 
 ## 🎯 Overview
 
-**Introspect2B** provides a complete example of integrating generative AI into insurance claim processing workflows. The API retrieves claim information from DynamoDB, fetches detailed notes from S3, and uses Amazon Bedrock (Claude 3 Haiku) to generate contextual summaries for different stakeholder perspectives.
+**Introspect2B** provides a complete example of integrating generative AI into insurance claim processing workflows. The API retrieves claim information from DynamoDB, fetches detailed notes from S3, and uses Amazon Bedrock (Nova Lite) to generate contextual summaries for different stakeholder perspectives.
 
 ### Key Features
 
 ✅ **RESTful API** — Claim retrieval and AI-powered summarization endpoints  
-✅ **GenAI Integration** — Amazon Bedrock with Claude 3 Haiku for intelligent summaries  
+✅ **GenAI Integration** — Amazon Bedrock with Amazon Nova Lite for intelligent summaries  
 ✅ **Intelligent Autoscaling** — AI-workload-aware Lambda autoscaler with trend analysis  
 ✅ **Cloud-Native** — Kubernetes on Amazon EKS with high availability  
 ✅ **Security** — IRSA (IAM Roles for Service Accounts), least-privilege permissions  
@@ -62,7 +62,7 @@ POST /api/claims/{id}/summarize
 |-------|-----------|
 | **API** | ASP.NET Core 10.0 (Minimal API) |
 | **Container Orchestration** | Amazon EKS 1.31 |
-| **AI/ML** | Amazon Bedrock (Claude 3 Haiku) |
+| **AI/ML** | Amazon Bedrock (Nova Lite) |
 | **Autoscaling** | AWS Lambda (Python 3.11) |
 | **Data Storage** | DynamoDB, S3 |
 | **API Gateway** | Amazon API Gateway (Regional) |

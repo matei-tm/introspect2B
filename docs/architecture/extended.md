@@ -44,7 +44,7 @@ graph TB
     subgraph "AWS Services"
         DDB[(DynamoDB<br/>Claims Table)]
         S3[(S3 Bucket<br/>Claim Notes)]
-        Bedrock[Amazon Bedrock<br/>Claude 3 Haiku]
+        Bedrock[Amazon Bedrock<br/>Nova Lite]
         CW[CloudWatch<br/>Metrics & Logs]
     end
     
@@ -118,7 +118,7 @@ graph TB
 - Stores detailed claim notes
 
 **Amazon Bedrock**
-- Model: Claude 3 Haiku
+- Model: Amazon Nova Lite
 - Use case: Claim summarization
 - Average inference time: 2-4 seconds
 - Variable latency based on prompt complexity
@@ -248,7 +248,7 @@ Makes final scaling determination:
 ```
 1. Client requests claim summary via API Gateway
 2. claim-status-api retrieves claim notes from S3
-3. Service constructs prompt and calls Bedrock (Claude 3 Haiku)
+3. Service constructs prompt and calls Bedrock (Nova Lite)
 4. Bedrock processes prompt (2-4 second inference time)
 5. Service parses AI-generated JSON summary
 6. Summary returned to client

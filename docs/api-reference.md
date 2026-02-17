@@ -102,7 +102,7 @@ curl -X GET http://localhost:8080/api/claims/CLAIM-001
 
 ### POST /api/claims/{id}/summarize
 
-Generate an AI-powered summary using Amazon Bedrock (Claude 3 Haiku).
+Generate an AI-powered summary using Amazon Bedrock (Nova Lite).
 
 #### Parameters
 
@@ -151,7 +151,7 @@ curl -X POST http://localhost:8080/api/claims/CLAIM-001/summarize \
   "adjusterFocusedSummary": "Water damage claim following pipe burst in kitchen. Claimant reports damage to kitchen cabinets, hardwood flooring in dining room, and ceiling drywall. Photos submitted show moderate water staining. Recommend on-site inspection to assess extent of structural damage and verify repair estimates. Check for mold growth given water intrusion timeframe.",
   "recommendedNextStep": "Schedule property inspection within 48 hours to assess water damage extent and verify repair estimates. Coordinate with preferred contractor for mold assessment if water exposure exceeded 24 hours.",
   "generatedAt": "2024-01-23T14:30:00Z",
-  "model": "anthropic.claude-3-haiku-20240307-v1:0",
+  "model": "amazon.nova-lite-v1:0",
   "tokensUsed": {
     "input": 245,
     "output": 178
@@ -274,7 +274,7 @@ The deployment includes **8 sample claims** and **4 detailed note blobs**:
 
 ### Amazon Bedrock
 
-- **Claude 3 Haiku**: 1,000 tokens/minute (default)
+- **Amazon Nova Lite**: 1,000 tokens/minute (default)
 - **Request Quota**: Request increase via AWS Support for production workloads
 
 ### Recommendations

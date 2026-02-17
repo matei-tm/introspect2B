@@ -32,7 +32,7 @@ flowchart TD
   API --> IRSA
   IRSA --> DDB[(DynamoDB Tables)]
   IRSA --> S3[(S3 Bucket - Claim Notes)]
-  IRSA --> Bedrock[(Amazon Bedrock - Claude 3)]
+  IRSA --> Bedrock[(Amazon Bedrock - Nova Lite)]
 ```
 
 ## Deployment Steps
@@ -249,7 +249,7 @@ aws bedrock list-foundation-models --region us-east-1
 
 # Check model availability
 aws bedrock describe-foundation-model \
-  --model-identifier anthropic.claude-3-haiku-20240307-v1:0 \
+  --model-identifier amazon.nova-lite-v1:0 \
   --region us-east-1
 ```
 
