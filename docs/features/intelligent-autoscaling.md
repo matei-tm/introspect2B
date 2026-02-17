@@ -174,6 +174,9 @@ Access the dashboard at:
 AWS Console → CloudWatch → Dashboards → introspect2b-eks-intelligent-autoscaler
 ```
 
+![Bedrock Metrics Dashboard](../media/Dashboard.Cloudwatch.Bedrock.png)
+*CloudWatch dashboard showing Bedrock inference duration, API latency, and autoscaling metrics*
+
 **Widgets:**
 1. **Autoscaler Performance** - Execution success/failure, scaling decisions
 2. **Pod Resource Utilization** - CPU/Memory trends
@@ -303,7 +306,7 @@ Planned improvements:
 
 ## References
 
-- [AI Autoscaling Instructions](../../docs/ai-autoscaling.instructions.md)
-- [HPA Documentation](../claim-status-api/k8s/AUTOSCALING.md)
+- [AI Autoscaling Instructions](../ai-autoscaling.instructions.md)
+- [Extended Architecture](../architecture/extended.md) - Deep dive into system design
 - [CloudWatch Container Insights](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContainerInsights.html)
 - [AWS Lambda Best Practices](https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html)

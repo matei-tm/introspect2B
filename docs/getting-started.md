@@ -85,15 +85,16 @@ SITE_PASSWORD=your_password
 
 ### Verify Secrets Configuration
 
-After adding all secrets, your Actions secrets page should show 7 secrets:
-
-![GitHub Secrets](../media/github-secrets-example.png)
+After adding all secrets, your Actions secrets page should show 7 secrets.
 
 ## Step 2: Deploy Infrastructure (One-Click Setup)
 
 ### Option A: Complete Lab Setup (Recommended)
 
 This workflow runs all setup steps in sequence: cleanup, backend setup, and CodePipeline deployment.
+
+![GitHub Workflow Lab Setup](media/Github.Workflow.1.LabSetup.png)
+*GitHub Actions workflow for complete lab setup*
 
 1. Navigate to **Actions** tab in your repository
 2. Select **"1. Lab Setup"** workflow (G1.0)
@@ -291,6 +292,9 @@ You can also manually trigger CodePipeline from AWS Console:
 2. Select `claim-status-api-pipeline`
 3. Click **"Release change"**
 
+![CodePipeline Dashboard](media/CodePipeline.claim-status-api-pipeline.png)
+*AWS CodePipeline showing the deployment stages*
+
 ### Watch Pipeline Execution
 
 Monitor the pipeline progress:
@@ -379,6 +383,9 @@ chmod +x scripts/init-sample-data.sh
 2. Select log group: `/aws/containerinsights/materclaims-cluster/application`
 3. Run a query to see API calls:
 
+![CloudWatch Container Insights Performance Monitor](media/CloudWatch.ContainerInsights.PerfMon.Pods.png)
+*CloudWatch Container Insights showing pod-level performance metrics*
+
 ```sql
 fields @timestamp, @message
 | filter @message like /api\/claims/
@@ -413,6 +420,9 @@ Test the deployed API Gateway endpoint:
 1. Get API Gateway URL from [AWS Console](https://console.aws.amazon.com/apigateway)
 2. Use AWS SigV4 signing for authentication
 3. See [API Reference](api-reference) for details
+
+![API Gateway Resources](media/APIGateway.APIs.Resources-claim-status-api-dev.png)
+*Amazon API Gateway showing configured API resources and methods*
 
 ## GitHub Actions Workflow Reference
 
@@ -486,6 +496,9 @@ graph TD
 ### CloudWatch Dashboard
 
 After deployment, access the intelligent autoscaler dashboard:
+
+![CloudWatch Bedrock Dashboard](media/Dashboard.Cloudwatch.Bedrock.png)
+*CloudWatch dashboard showing Bedrock inference metrics and API performance*
 
 1. Get the URL from Terraform outputs:
    ```
@@ -790,26 +803,16 @@ After running destroy, verify these resources are deleted:
 ### Explore Features
 
 - 📖 [API Reference](api-reference) - Complete endpoint documentation with examples
-- 🤖 [Intelligent Autoscaling](../features/intelligent-autoscaling) - How AI-powered scaling works
-- 🔍 [Observability](../features/observability) - Monitoring, logging, and dashboards
+- 🤖 [Intelligent Autoscaling](features/intelligent-autoscaling) - How AI-powered scaling works
 
 ### Understand Architecture
 
-- 🏗️ [System Architecture](../architecture/overview) - High-level design and components
-- 🔐 [Security Architecture](../architecture/security) - IAM, IRSA, and network security
-- 📊 [Extended Architecture](../architecture/extended) - Deep dive into autoscaling
+- 🏗️ [System Architecture](architecture/overview) - High-level design and components
+- 📊 [Extended Architecture](architecture/extended) - Deep dive into autoscaling
 
-### Development and Customization
+### Advanced Topics
 
-- 🔧 [Development Guide](../development/local-development) - Run locally for development
-- ⚙️ [Configuration](../deployment/configuration) - Customize Terraform variables
-- 🚀 [Advanced Deployment](../deployment/deployment-guide) - Production-ready patterns
-
-### CI/CD Deep Dive
-
-- 📋 [GitHub Actions Guide](../deployment/github-actions) - Workflow details
-- 🔄 [CodePipeline Integration](../deployment/codepipeline) - AWS pipeline architecture
-- 🧪 [Testing Strategy](../development/testing) - Unit, integration, and performance tests
+- 🚀 [Advanced Deployment](deployment/deployment-guide) - Production-ready patterns
 
 ---
 

@@ -290,8 +290,6 @@ graph LR
 5. **Deploy**: Update EKS deployment
 6. **Verify**: Health checks and smoke tests
 
-[View CI/CD Details →](../deployment/github-actions)
-
 ## Infrastructure as Code
 
 **Terraform Modules** (`iac/terraform/`)
@@ -350,9 +348,8 @@ graph LR
 ## Related Documentation
 
 - [Extended Architecture (Intelligent Autoscaling Deep Dive)](extended)
-- [Security Architecture Details](security)
-- [Observability and Monitoring](../features/observability)
-- [GenAI Integration Patterns](../features/genai-integration)
+- [Intelligent Autoscaling Feature](../features/intelligent-autoscaling) - How the system predicts and responds to workload changes
+- [Getting Started Guide](../getting-started) - Deploy the system
 
 ---
 

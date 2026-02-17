@@ -92,29 +92,18 @@ Pre-configured CloudWatch Logs Insights queries for:
 ## 📚 Documentation
 
 ### Getting Started
-- [Quick Start Guide](getting-started) - Deploy in 30 minutes
-- [Prerequisites](deployment/prerequisites) - AWS account setup
-- [Local Development](development/local-setup) - Run locally
+- [Quick Start Guide](getting-started) - Deploy in 30 minutes with GitHub Actions
+- [API Reference](api-reference) - Complete endpoint documentation with examples
 
 ### Architecture
-- [System Architecture](architecture/overview) - High-level design
+- [System Architecture](architecture/overview) - High-level design and components
 - [Extended Architecture](architecture/extended) - Intelligent autoscaling deep dive
-- [Security Model](architecture/security) - IAM roles and network design
 
 ### Features
-- [GenAI Integration](features/genai-integration) - Amazon Bedrock implementation
 - [Intelligent Autoscaling](features/intelligent-autoscaling) - Predictive scaling system
-- [Observability](features/observability) - Monitoring and logging
 
 ### Deployment
 - [Deployment Guide](deployment/deployment-guide) - Complete deployment walkthrough
-- [GitHub Actions](deployment/github-actions) - CI/CD workflows
-- [Terraform](deployment/terraform) - Infrastructure as Code
-
-### Development
-- [API Reference](api-reference) - Endpoint documentation
-- [Testing Guide](development/testing) - Unit, integration, and performance tests
-- [Contributing](development/contributing) - Development workflow
 
 ## 🛠️ Technology Stack
 
@@ -141,8 +130,6 @@ The system publishes custom CloudWatch metrics:
 - Container Insights: Pod-level CPU, memory, network metrics
 - Application metrics: Bedrock invocations, API latency, error rates
 
-[View Monitoring Dashboard →](features/observability#cloudwatch-dashboard)
-
 ## 🤝 Contributing
 
 We welcome contributions! This project demonstrates best practices for:
@@ -151,8 +138,6 @@ We welcome contributions! This project demonstrates best practices for:
 - Kubernetes autoscaling strategies
 - Infrastructure as Code with Terraform
 - CI/CD automation with AWS services
-
-See the [Contributing Guide](development/contributing) for details.
 
 ## 📄 License
 

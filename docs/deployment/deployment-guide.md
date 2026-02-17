@@ -112,6 +112,13 @@ aws s3 ls s3://claim-notes-$(aws sts get-caller-identity --query Account --outpu
 
 ## Testing
 
+### Security Scanning
+
+AWS Inspector and ECR scanning automatically run on container images:
+
+![ECR Image Scan Results](../media/ECRimageScan.png)
+*Amazon ECR vulnerability scanning results*
+
 ### Local Testing
 
 ```bash
@@ -147,6 +154,11 @@ kubectl describe deployment -n materclaims claim-status-api
 ```
 
 ### Monitor Health
+
+Use CloudWatch Container Insights for comprehensive monitoring:
+
+![CloudWatch Container Insights Services](../media/CloudWatch.ContainerInsights.PerfMon.Services.png)
+*CloudWatch Container Insights displaying service-level performance metrics for the EKS cluster*
 
 ```bash
 # Health check endpoint

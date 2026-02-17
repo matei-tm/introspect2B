@@ -404,9 +404,8 @@ All errors return a consistent format:
 
 - [Getting Started Guide](getting-started) - Deploy the API
 - [Architecture Overview](architecture/overview) - System design
-- [GenAI Integration](features/genai-integration) - Bedrock implementation details
-- [Observability](features/observability) - Monitoring and logging
+- [Intelligent Autoscaling](features/intelligent-autoscaling) - How autoscaling works
 
 ---
 
-**Questions?** Open an issue on [GitHub](https://github.com/matei-tm/introspect2B/issues) or check the [Troubleshooting Guide](deployment/troubleshooting).
+**Questions?** Open an issue on [GitHub](https://github.com/matei-tm/introspect2B/issues) or check the [Getting Started Guide](getting-started).
