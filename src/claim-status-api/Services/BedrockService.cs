@@ -27,7 +27,7 @@ public class BedrockService : IBedrockService
         _bedrockRuntime = bedrockRuntime;
         _cloudWatch = cloudWatch;
         _logger = logger;
-        _modelId = config["AWS:Bedrock:ModelId"] ?? "anthropic.claude-3-haiku-20240307-v1:0";
+        _modelId = config["AWS:Bedrock:ModelId"] ?? "amazon.nova-lite-v1:0";
         _inferenceProfileId = config["AWS:Bedrock:InferenceProfileId"] ?? string.Empty;
         _inferenceProfileArn = config["AWS:Bedrock:InferenceProfileArn"] ?? string.Empty;
     }

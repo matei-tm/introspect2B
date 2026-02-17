@@ -229,7 +229,7 @@ jobs:
             aws cloudwatch get-metric-statistics \
               --namespace ClaimStatusAPI \
               --metric-name BedrockInferenceDuration \
-              --dimensions Name=Service,Value=claim-status-api Name=Model,Value=claude-3-haiku \
+              --dimensions Name=Service,Value=claim-status-api Name=Model,Value=nova-lite \
               --start-time "$START_TIME" \
               --end-time "$END_TIME" \
               --period 300 \
