@@ -24,7 +24,7 @@ phases:
   build:
     commands:
       - echo "Running unit tests with code coverage..."
-      - dotnet test introspect2B.sln --configuration Release --filter "TestCategory!=Integration" --logger "console;verbosity=detailed" --logger "trx" --collect:"XPlat Code Coverage" --results-directory test-results
+      - dotnet test introspect2B.sln --configuration Release --filter "TestCategory!=Integration" --logger "console;verbosity=detailed" --logger "trx" --collect:"XPlat Code Coverage" --results-directory test-results -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.ExcludeByFile="**/*.generated.cs,**/Program.cs"
       - echo "Running integration tests..."
       - dotnet test introspect2B.sln --configuration Release --filter "TestCategory=Integration" --logger "console;verbosity=detailed" --logger "trx" --results-directory test-results || true
 
