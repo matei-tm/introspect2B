@@ -172,7 +172,7 @@ class ScalingDecisionEngine:
             'BedrockInferenceDuration',
             [
                 {'Name': 'Service', 'Value': 'claim-status-api'},
-                {'Name': 'Model', 'Value': 'claude-3-haiku'}
+                {'Name': 'Model', 'Value': 'nova-lite'}
             ]
         )
         bedrock_values = bedrock_analyzer.get_metric_statistics(METRIC_WINDOW_MINUTES, 'Average')

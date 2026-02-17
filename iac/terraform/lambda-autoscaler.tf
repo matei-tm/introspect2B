@@ -208,7 +208,7 @@ resource "aws_cloudwatch_metric_alarm" "bedrock_duration_high" {
 
   dimensions = {
     Service = "claim-status-api"
-    Model   = "claude-3-haiku"
+    Model   = "nova-lite"
   }
 
   alarm_actions = [aws_lambda_function.intelligent_autoscaler.arn]
