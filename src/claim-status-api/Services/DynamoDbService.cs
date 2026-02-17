@@ -29,7 +29,7 @@ public class DynamoDbService : IDynamoDbService
                 TableName = _tableName,
                 Key = new Dictionary<string, AttributeValue>
                 {
-                    ["key"] = new AttributeValue { S = claimId }
+                    ["id"] = new AttributeValue { S = claimId }
                 }
             };
 
