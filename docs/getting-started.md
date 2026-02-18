@@ -48,8 +48,6 @@ Introspect2B provides 8 automated workflows that handle everything from infrastr
 
 ## Step 1: Configure GitHub Secrets
 
-## Step 1: Configure GitHub Secrets
-
 Navigate to your forked repository → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 
 Add the following 7 secrets:
@@ -125,8 +123,6 @@ Only needed if you have leftover API Gateway stacks from previous deployments:
 - **Workflow**: "1.1 API Gateway Cleanup" (G1.1)
 - **Duration**: 1 minute
 - **Creates**: Nothing (cleanup only)
-
-#### 2.2: Setup Terraform Backend (Required)
 
 #### 2.2: Setup Terraform Backend (Required)
 
@@ -249,8 +245,6 @@ intelligent_autoscaler_dashboard_url = "https://console.aws.amazon.com/cloudwatc
 ## Step 4: Deploy Application to EKS
 
 The application deployment happens automatically via AWS CodePipeline, but you can also trigger it manually:
-
-### Option A: Auto-Trigger (Recommended)
 
 ### Option A: Auto-Trigger (Recommended)
 

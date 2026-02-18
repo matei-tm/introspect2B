@@ -13,20 +13,18 @@ docs/
 ├── architecture/
 │   ├── overview.md                      # System architecture
 │   ├── extended.md                      # Intelligent autoscaling deep dive
-│   └── security.md                      # Security architecture (TBD)
+│   └── security.md                      # Security architecture
 ├── features/
 │   ├── intelligent-autoscaling.md       # Autoscaling feature docs
-│   ├── genai-integration.md             # Bedrock integration (TBD)
-│   └── observability.md                 # Monitoring and logging (TBD)
+│   ├── genai-integration.md             # Bedrock integration
+│   └── observability.md                 # Monitoring and logging
 ├── deployment/
 │   ├── deployment-guide.md              # Complete deployment guide
-│   ├── github-actions.md                # CI/CD workflows (TBD)
-│   ├── terraform.md                     # IaC documentation (TBD)
-│   └── troubleshooting.md               # Common issues (TBD)
+│   └── troubleshooting.md               # Common issues
 ├── development/
-│   ├── local-setup.md                   # Local development (TBD)
-│   ├── testing.md                       # Testing guide (TBD)
-│   └── contributing.md                  # Contribution guidelines (TBD)
+│   └── (planned guides)
+├── lab-coverage.md                      # Lab objective-to-evidence mapping
+├── evaluation-readiness.md              # Evaluation criteria coverage matrix
 └── media/                               # Images and diagrams
     ├── init-lab.png
     ├── wiki.png
@@ -140,7 +138,7 @@ Use relative links for internal navigation:
 Store images in the `media/` folder:
 
 ```markdown
-![Architecture Diagram](media/architecture.png)
+![Container Insights](media/CloudWatch.ContainerInsights.1.png)
 ```
 
 ## 🔗 Quick Links
@@ -151,20 +149,13 @@ Store images in the `media/` folder:
 - [Getting Started](getting-started.md) - Quick deployment guide
 - [API Reference](api-reference.md) - Complete API documentation
 - [Architecture Overview](architecture/overview.md) - System design
+- [Security Architecture](architecture/security.md) - Access control and compliance baseline
+- [GenAI Integration](features/genai-integration.md) - Bedrock request/response flow
+- [Observability](features/observability.md) - Logs, metrics, and query strategy
 - [Intelligent Autoscaling](features/intelligent-autoscaling.md) - Autoscaling deep dive
 - [Deployment Guide](deployment/deployment-guide.md) - Full deployment walkthrough
-
-### To Be Created (TBD)
-
-- `architecture/security.md` - Security model documentation
-- `features/genai-integration.md` - Bedrock integration patterns
-- `features/observability.md` - Monitoring and logging guide
-- `deployment/github-actions.md` - CI/CD workflows documentation
-- `deployment/terraform.md` - Infrastructure as Code guide
-- `deployment/troubleshooting.md` - Common issues and solutions
-- `development/local-setup.md` - Local development environment
-- `development/testing.md` - Unit, integration, and performance tests
-- `development/contributing.md` - Contribution guidelines
+- [Lab Objectives Coverage](lab-coverage.md) - Objective-by-objective evidence
+- [Evaluation Readiness](evaluation-readiness.md) - Criteria-to-doc traceability
 
 ## 🎨 Customization
 
@@ -238,15 +229,15 @@ Store screenshots, diagrams, and other images in `docs/media/`:
 
 ```
 docs/media/
-├── architecture-diagram.png
-├── api-gateway-setup.png
-├── cloudwatch-dashboard.png
-└── scaling-decisions.png
+├── CloudWatch.ContainerInsights.1.png
+├── CloudWatch.LogsInsights.Query1.png
+├── Dashboard.Cloudwatch.Bedrock.png
+└── CodePipeline.claim-status-api-pipeline.png
 ```
 
 Reference in Markdown:
 ```markdown
-![CloudWatch Dashboard](media/cloudwatch-dashboard.png)
+![CloudWatch Dashboard](media/Dashboard.Cloudwatch.Bedrock.png)
 ```
 
 ### Downloads

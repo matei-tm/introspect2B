@@ -40,9 +40,13 @@ header_pages:
   - index.md
   - getting-started.md
   - architecture/overview.md
+  - architecture/security.md
   - features/genai-integration.md
+  - features/observability.md
   - deployment/deployment-guide.md
   - api-reference.md
+  - lab-coverage.md
+  - evaluation-readiness.md
 
 # Exclude files
 exclude:

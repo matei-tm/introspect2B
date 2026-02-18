@@ -1,4 +1,4 @@
-name: 5.2 Fix Container Insights Permissions
+name: 2.2 Fix Container Insights Permissions
 
 on:
   workflow_dispatch:
@@ -135,7 +135,7 @@ jobs:
       - name: Summary
         run: |
           {
-            echo "## 5.2 Container Insights Permissions Patch"
+            echo "## 2.2 Container Insights Permissions Patch"
             echo ""
             echo "- Region: \\`${{ inputs.aws_region }}\\`"
             echo "- Cluster: \\`${{ inputs.eks_cluster_name }}\\`"

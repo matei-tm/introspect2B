@@ -98,12 +98,20 @@ Pre-configured CloudWatch Logs Insights queries for:
 ### Architecture
 - [System Architecture](architecture/overview) - High-level design and components
 - [Extended Architecture](architecture/extended) - Intelligent autoscaling deep dive
+- [Security Architecture](architecture/security) - IAM, IRSA, and compliance baseline
 
 ### Features
 - [Intelligent Autoscaling](features/intelligent-autoscaling) - Predictive scaling system
+- [GenAI Integration](features/genai-integration) - Bedrock workflow and design choices
+- [Observability](features/observability) - Log groups, queries, and dashboards
 
 ### Deployment
 - [Deployment Guide](deployment/deployment-guide) - Complete deployment walkthrough
+- [Troubleshooting](deployment/troubleshooting) - Common deployment and runtime issues
+
+### Readiness
+- [Lab Objectives Coverage](lab-coverage) - Objective-by-objective evidence map
+- [Evaluation Readiness](evaluation-readiness) - Criteria coverage and future roadmap
 
 ## 🛠️ Technology Stack
 

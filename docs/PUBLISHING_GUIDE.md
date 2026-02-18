@@ -204,16 +204,16 @@ git push
 ## 📊 Recommended Pages to Add
 
 ### High Priority
-- [ ] `features/genai-integration.md` - Bedrock integration details
-- [ ] `features/observability.md` - CloudWatch monitoring guide
+- [x] `features/genai-integration.md` - Bedrock integration details
+- [x] `features/observability.md` - CloudWatch monitoring guide
 - [ ] `deployment/github-actions.md` - CI/CD workflows documentation
-- [ ] `deployment/troubleshooting.md` - Common issues and solutions
+- [x] `deployment/troubleshooting.md` - Common issues and solutions
 
 ### Medium Priority
 - [ ] `development/local-setup.md` - Local development environment
 - [ ] `development/testing.md` - Unit, integration, performance tests
 - [ ] `development/contributing.md` - Contribution guidelines
-- [ ] `architecture/security.md` - Detailed security architecture
+- [x] `architecture/security.md` - Detailed security architecture
 
 ### Nice to Have
 - [ ] `deployment/terraform.md` - IaC deep dive
@@ -268,7 +268,7 @@ github_username: matei-tm
 ```markdown
 [Getting Started](getting-started)
 [Architecture](architecture/overview)
-[API Reference](../api-reference)
+[API Reference](api-reference)
 ```
 
 ### Absolute Links (use sparingly)
@@ -281,20 +281,20 @@ github_username: matei-tm
 1. **Save images** to `docs/media/`:
 ```bash
 docs/media/
-├── architecture-diagram.png
-├── cloudwatch-dashboard.png
-└── api-flow.png
+├── CloudWatch.ContainerInsights.1.png
+├── CloudWatch.LogsInsights.Query1.png
+└── Dashboard.Cloudwatch.Bedrock.png
 ```
 
 2. **Reference in Markdown**:
 ```markdown
-![Architecture Diagram](media/architecture-diagram.png)
+![Container Insights](media/CloudWatch.ContainerInsights.1.png)
 ```
 
 3. **With caption**:
 ```markdown
-![Architecture Diagram](media/architecture-diagram.png)
-*Figure 1: High-level system architecture*
+![Logs Insights Query](media/CloudWatch.LogsInsights.Query1.png)
+*Figure 1: Example operational query output*
 ```
 
 ## 📈 Tracking & Analytics
