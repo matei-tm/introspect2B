@@ -45,3 +45,4 @@ src/bruno/api_tests/environments/*.local.bru
 docs/_site/
 docs/.jekyll-cache/
 docs/.sass-cache/
+docs/output/
