@@ -23,8 +23,7 @@ phases:
       - python3 -m pip install --upgrade pip
       - python3 -m pip install semgrep bandit
       - echo "Installing SBOM generation tool..."
-      - dotnet tool install --global CycloneDX || dotnet tool update --global CycloneDX
-      - dotnet tool list --global
+      - npm install -g @cyclonedx/cdxgen
 
   build:
     commands:
@@ -36,7 +35,7 @@ phases:
       
       - echo "Generating SBOM..."
       - dotnet publish src/claim-status-api/claim-status-api.csproj --configuration Release --output ./publish
-      - /root/.dotnet/tools/dotnet-CycloneDX src/claim-status-api/claim-status-api.csproj -o . -fn sbom.xml || true
+      - cdxgen -t dotnet -o sbom.xml src/claim-status-api/claim-status-api.csproj || true
       
       - echo "Scanning container image layers..."
       - echo "Image:" '$REGISTRY/$REPOSITORY:$IMAGE_TAG'
