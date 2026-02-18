@@ -1,10 +1,12 @@
 ﻿# Introspect2B: GenAI-Powered Claim Status API
 
-[![1. Lab Setup](https://github.com/matei-tm/introspect2B/actions/workflows/G1.0.lab-setup.yml/badge.svg)](https://github.com/matei-tm/introspect2B/actions/workflows/G1.0.lab-setup.yml)
-[![2.1 Deploy Terraform Infrastructure](https://github.com/matei-tm/introspect2B/actions/workflows/G2.terraform-deploy.yml/badge.svg)](https://github.com/matei-tm/introspect2B/actions/workflows/G2.terraform-deploy.yml)
-[![3. Auto-trigger CodePipeline](https://github.com/matei-tm/introspect2B/actions/workflows/G3.trigger-codepipeline.yml/badge.svg)](https://github.com/matei-tm/introspect2B/actions/workflows/G3.trigger-codepipeline.yml)
-[![4. Test and Collect Logs](https://github.com/matei-tm/introspect2B/actions/workflows/G4.test-and-logs.yml/badge.svg)](https://github.com/matei-tm/introspect2B/actions/workflows/G4.test-and-logs.yml)
-[![pages build and deployment](https://github.com/matei-tm/introspect2B/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/matei-tm/introspect2B/actions?query=workflow%3A%22pages+build+and+deployment%22)
+| Workflow | Status |
+|---|---|
+| 1. Lab Setup | [![1. Lab Setup](https://github.com/matei-tm/introspect2B/actions/workflows/G1.0.lab-setup.yml/badge.svg)](https://github.com/matei-tm/introspect2B/actions/workflows/G1.0.lab-setup.yml) |
+| 2.1 Deploy Terraform Infrastructure | [![2.1 Deploy Terraform Infrastructure](https://github.com/matei-tm/introspect2B/actions/workflows/G2.terraform-deploy.yml/badge.svg)](https://github.com/matei-tm/introspect2B/actions/workflows/G2.terraform-deploy.yml) |
+| 3. Auto-trigger CodePipeline | [![3. Auto-trigger CodePipeline](https://github.com/matei-tm/introspect2B/actions/workflows/G3.trigger-codepipeline.yml/badge.svg)](https://github.com/matei-tm/introspect2B/actions/workflows/G3.trigger-codepipeline.yml) |
+| 4. Test and Collect Logs | [![4. Test and Collect Logs](https://github.com/matei-tm/introspect2B/actions/workflows/G4.test-and-logs.yml/badge.svg)](https://github.com/matei-tm/introspect2B/actions/workflows/G4.test-and-logs.yml) |
+| documentation build and deployment | [![pages build and deployment](https://github.com/matei-tm/introspect2B/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/matei-tm/introspect2B/actions?query=workflow%3A%22pages+build+and+deployment%22) |
 
 A production-ready cloud-native microservice demonstrating enterprise-grade architecture patterns for GenAI integration on AWS. Built with .NET 10, Amazon EKS, and Amazon Bedrock.
 
