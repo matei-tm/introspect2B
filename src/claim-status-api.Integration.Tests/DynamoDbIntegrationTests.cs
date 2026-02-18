@@ -178,7 +178,7 @@ internal class IntegrationTestDynamoDbClient : AmazonDynamoDBClient
 
     public override Task<GetItemResponse> GetItemAsync(GetItemRequest request, System.Threading.CancellationToken cancellationToken = default)
     {
-        if (request.Key.TryGetValue("id", out var idAttr) && _storage.TryGetValue(idAttr.S, out var item))
+        if (request.Key.TryGetValue("key", out var keyAttr) && _storage.TryGetValue(keyAttr.S, out var item))
         {
             return Task.FromResult(new GetItemResponse
             {

@@ -138,7 +138,7 @@ internal class FakeAmazonDynamoDbClient : Amazon.DynamoDBv2.AmazonDynamoDBClient
 
     public override Task<Amazon.DynamoDBv2.Model.GetItemResponse> GetItemAsync(Amazon.DynamoDBv2.Model.GetItemRequest request, CancellationToken cancellationToken = default)
     {
-        if (_seedItem != null && request.Key != null && request.Key.TryGetValue("id", out var idAttr) && _seedItem.TryGetValue("id", out _))
+        if (_seedItem != null && request.Key != null && request.Key.TryGetValue("key", out var keyAttr) && _seedItem.TryGetValue("id", out _))
         {
             return Task.FromResult(new Amazon.DynamoDBv2.Model.GetItemResponse { Item = new Dictionary<string, AttributeValue>(_seedItem) });
         }
