@@ -14,38 +14,33 @@ Traditional autoscaling (HPA/VPA) reacts to CPU and memory metrics, which don't 
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    CloudWatch Metrics                            │
-│  ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌────────────────┐ │
-│  │   CPU    │  │  Memory   │  │ Latency  │  │ Bedrock Infer. ││ │
-│  └────┬─────┘  └─────┬─────┘  └────┬─────┘  └────────┬───────┘ │
-└───────┼──────────────┼─────────────┼─────────────────┼─────────┘
-        │              │             │                 │
-        └──────────────┴─────────────┴─────────────────┘
-                              │
-                    ┌─────────▼──────────┐
-                    │                    │
-                    │  Lambda Function   │
-                    │  (Every 5 minutes) │
-                    │                    │
-                    └─────────┬──────────┘
-                              │
-            ┌─────────────────┼─────────────────┐
-            │                 │                 │
-     ┌──────▼──────┐   ┌──────▼──────┐  ┌──────▼──────┐
-     │ Trend       │   │ Noise       │  │ Decision    │
-     │ Analysis    │   │ Filter      │  │ Engine      │
-     └──────┬──────┘   └──────┬──────┘  └──────┬──────┘
-            │                 │                 │
-            └─────────────────┴─────────────────┘
-                              │
-                    ┌─────────▼──────────┐
-                    │                    │
-                    │  Scaling Decision  │
-                    │  (logged & metered)│
-                    │                    │
-                    └────────────────────┘
+```mermaid
+flowchart TB
+  subgraph CW[CloudWatch Metrics]
+    CPU[CPU]
+    MEM[Memory]
+    LAT[Latency]
+    BED[Bedrock Inference]
+  end
+
+  L[Lambda Function\nEvery 5 minutes]
+  T[Trend Analysis]
+  N[Noise Filter]
+  D[Decision Engine]
+  S[Scaling Decision\nlogged and metered]
+
+  CPU --> L
+  MEM --> L
+  LAT --> L
+  BED --> L
+
+  L --> T
+  L --> N
+  L --> D
+
+  T --> S
+  N --> S
+  D --> S
 ```
 
 ## Key Features
