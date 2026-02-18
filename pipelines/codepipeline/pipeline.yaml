@@ -430,6 +430,18 @@ Resources:
 
         - Name: BuildTestScan
           Actions:
+            - Name: SecurityScan
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref SecurityScanBuild
+              InputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 1
+
             - Name: UnitTest
               ActionTypeId:
                 Category: Build
@@ -442,6 +454,7 @@ Resources:
                 - Name: SourceOutput
               OutputArtifacts:
                 - Name: TestOutput
+              RunOrder: 2
 
             - Name: LambdaTest
               ActionTypeId:
@@ -455,18 +468,6 @@ Resources:
                 - Name: SourceOutput
               OutputArtifacts:
                 - Name: LambdaTestOutput
-              RunOrder: 1
-
-            - Name: SecurityScan
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: '1'
-              Configuration:
-                ProjectName: !Ref SecurityScanBuild
-              InputArtifacts:
-                - Name: SourceOutput
               RunOrder: 2
 
         - Name: DockerPushAndScan
