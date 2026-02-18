@@ -301,7 +301,7 @@ Monitor the pipeline progress:
    - **SecurityScan**: AWS Inspector + Defender scans
    - **DockerBuild**: Builds container image
    - **Deploy**: Updates EKS deployment
-   - **Test**: Runs integration tests
+   - **Test**: Seed synthetic data and runs integration tests
 
 **Expected Duration**: 8-12 minutes
 
@@ -431,8 +431,6 @@ graph TD
     C --> D[4. Run G2: Terraform Deploy]
     D --> E[5. Auto-trigger G3: CodePipeline]
     E --> F[6. Run G4: Test and Collect Logs]
-    F --> G[7. Initialize Sample Data]
-    G --> H[8. Test API]
     
     style C fill:#90EE90
     style D fill:#87CEEB
@@ -480,10 +478,6 @@ graph TD
 - **Duration**: 1-2 minutes
 - **Use When**: After deployment, troubleshooting
 
-#### G5: Publish Wiki
-- **Purpose**: Generate PDF documentation from wiki
-- **Duration**: 3-5 minutes
-- **Use When**: Creating documentation deliverables
 
 ## Observability and Monitoring
 
