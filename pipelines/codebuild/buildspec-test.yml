@@ -35,8 +35,7 @@ phases:
     commands:
       - echo "Test execution completed"
       - echo "Merging coverage reports..."
-      - export PATH="$PATH:/root/.dotnet/tools"
-      - reportgenerator -reports:"test-results/**/coverage.cobertura.xml" -targetdir:"test-results/merged-coverage" -reporttypes:"Cobertura" || echo "Coverage merge failed"
+      - /root/.dotnet/tools/reportgenerator -reports:"test-results/**/coverage.cobertura.xml" -targetdir:"test-results/merged-coverage" -reporttypes:"Cobertura" || echo "Coverage merge failed"
       - echo "Test results location:"
       - find test-results -type f -name "*.trx" -o -name "*.xml" 2>/dev/null || echo "No test results found"
 
