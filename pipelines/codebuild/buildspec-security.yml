@@ -60,7 +60,3 @@ reports:
     files:
       - 'semgrep-results.json'
     file-format: 'JSON'
-  SBOMReport:
-    files:
-      - 'sbom.xml'
-    file-format: 'XML'
