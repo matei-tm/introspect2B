@@ -440,6 +440,8 @@ Resources:
                 ProjectName: !Ref SecurityScanBuild
               InputArtifacts:
                 - Name: SourceOutput
+              OutputArtifacts:
+                - Name: SecurityScanOutput
               RunOrder: 1
 
             - Name: UnitTest
