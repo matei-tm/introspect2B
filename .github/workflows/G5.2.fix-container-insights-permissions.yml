@@ -1,0 +1,147 @@
+name: 5.2 Fix Container Insights Permissions
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        description: AWS region
+        required: true
+        default: us-east-1
+      eks_cluster_name:
+        description: EKS cluster name
+        required: true
+        default: materclaims-cluster
+      eks_nodegroup_name:
+        description: EKS node group name (leave empty to auto-detect first)
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  apply-container-insights-patch:
+    name: Apply Container Insights IAM patch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Resolve node group and role
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+          CLUSTER="${{ inputs.eks_cluster_name }}"
+          REGION="${{ inputs.aws_region }}"
+          NODEGROUP_INPUT="${{ inputs.eks_nodegroup_name }}"
+
+          if [[ -z "$NODEGROUP_INPUT" ]]; then
+            NODEGROUP=$(aws eks list-nodegroups \
+              --cluster-name "$CLUSTER" \
+              --region "$REGION" \
+              --query 'nodegroups[0]' \
+              --output text)
+          else
+            NODEGROUP="$NODEGROUP_INPUT"
+          fi
+
+          if [[ -z "$NODEGROUP" || "$NODEGROUP" == "None" ]]; then
+            echo "No node group found for cluster $CLUSTER"
+            exit 1
+          fi
+
+          ROLE_ARN=$(aws eks describe-nodegroup \
+            --cluster-name "$CLUSTER" \
+            --nodegroup-name "$NODEGROUP" \
+            --region "$REGION" \
+            --query 'nodegroup.nodeRole' \
+            --output text)
+
+          ROLE_NAME=$(basename "$ROLE_ARN")
+
+          echo "nodegroup=$NODEGROUP" >> "$GITHUB_OUTPUT"
+          echo "role_arn=$ROLE_ARN" >> "$GITHUB_OUTPUT"
+          echo "role_name=$ROLE_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Apply IAM inline policy patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          REGION="${{ inputs.aws_region }}"
+          ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+          CLUSTER="${{ inputs.eks_cluster_name }}"
+          ROLE_NAME="${{ steps.resolve.outputs.role_name }}"
+
+          cat > container-insights-logs-policy.json <<EOF
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "AllowContainerInsightsCloudWatchLogs",
+                "Effect": "Allow",
+                "Action": [
+                  "logs:CreateLogGroup",
+                  "logs:CreateLogStream",
+                  "logs:DescribeLogStreams",
+                  "logs:PutLogEvents",
+                  "logs:PutRetentionPolicy"
+                ],
+                "Resource": [
+                  "arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/containerinsights/${CLUSTER}*",
+                  "arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/containerinsights/${CLUSTER}*:log-stream:*"
+                ]
+              }
+            ]
+          }
+          EOF
+
+          aws iam put-role-policy \
+            --role-name "$ROLE_NAME" \
+            --policy-name ContainerInsightsLogsWriteAccess \
+            --policy-document file://container-insights-logs-policy.json
+
+      - name: Refresh CloudWatch agents in cluster
+        shell: bash
+        run: |
+          set -euo pipefail
+          aws eks update-kubeconfig \
+            --region "${{ inputs.aws_region }}" \
+            --name "${{ inputs.eks_cluster_name }}"
+
+          kubectl rollout restart daemonset/cloudwatch-agent -n amazon-cloudwatch || true
+          kubectl rollout restart daemonset/fluent-bit -n amazon-cloudwatch || true
+
+          kubectl rollout status daemonset/cloudwatch-agent -n amazon-cloudwatch --timeout=180s || true
+          kubectl rollout status daemonset/fluent-bit -n amazon-cloudwatch --timeout=180s || true
+
+      - name: Verify no recent AccessDenied in cloudwatch-agent
+        shell: bash
+        run: |
+          set -euo pipefail
+          kubectl logs -n amazon-cloudwatch daemonset/cloudwatch-agent --since=5m \
+            | grep -E "AccessDeniedException|not authorized to perform: logs:PutLogEvents" \
+            && echo "AccessDenied still present (check IAM boundaries/SCPs)" \
+            || echo "No recent AccessDenied for logs:PutLogEvents"
+
+      - name: Summary
+        run: |
+          {
+            echo "## 5.2 Container Insights Permissions Patch"
+            echo ""
+            echo "- Region: \\`${{ inputs.aws_region }}\\`"
+            echo "- Cluster: \\`${{ inputs.eks_cluster_name }}\\`"
+            echo "- NodeGroup: \\`${{ steps.resolve.outputs.nodegroup }}\\`"
+            echo "- Role: \\`${{ steps.resolve.outputs.role_name }}\\`"
+            echo "- Policy: \\`ContainerInsightsLogsWriteAccess\\`"
+            echo ""
+            echo "Patched IAM role and restarted CloudWatch agents."
+          } >> "$GITHUB_STEP_SUMMARY"
