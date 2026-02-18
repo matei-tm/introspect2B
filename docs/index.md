@@ -112,6 +112,7 @@ Pre-configured CloudWatch Logs Insights queries for:
 ### Readiness
 - [Lab Objectives Coverage](lab-coverage) - Objective-by-objective evidence map
 - [Evaluation Readiness](evaluation-readiness) - Criteria coverage and future roadmap
+- [Evidence Gallery](evidence-gallery) - Visual evidence for pipeline, security, and observability
 
 ## 🛠️ Technology Stack
 

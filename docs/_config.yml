@@ -47,6 +47,7 @@ header_pages:
   - api-reference.md
   - lab-coverage.md
   - evaluation-readiness.md
+  - evidence-gallery.md
 
 # Exclude files
 exclude:
