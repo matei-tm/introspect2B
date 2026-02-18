@@ -14,12 +14,11 @@ phases:
       - ./dotnet-install.sh --channel 10.0 --quality daily --install-dir /root/.dotnet
       - ln -sf /root/.dotnet/dotnet /usr/local/bin/dotnet
       - dotnet --info | head -n 20
-      - echo "Installing ReportGenerator for coverage merging..."
-      - dotnet tool install --global dotnet-reportgenerator-globaltool
-      - dotnet tool list --global
   pre_build:
     commands:
       - echo "Installing test dependencies..."
+      - rm -rf test-results/codebuild
+      - mkdir -p test-results/codebuild
       - dotnet restore introspect2B.sln
       - echo "Running code analysis..."
       - dotnet build introspect2B.sln --configuration Release
@@ -27,17 +26,15 @@ phases:
   build:
     commands:
       - echo "Running unit tests with code coverage..."
-      - dotnet test introspect2B.sln --configuration Release --filter "TestCategory!=Integration" --logger "console;verbosity=detailed" --logger "trx" --collect:"XPlat Code Coverage" --results-directory test-results -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.ExcludeByFile="**/*.generated.cs,**/Program.cs"
+      - dotnet test src/claim-status-api.Tests --configuration Release --logger "console;verbosity=detailed" --logger "trx" --collect:"XPlat Code Coverage" --results-directory test-results/codebuild -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.ExcludeByFile="**/*.generated.cs,**/Program.cs"
       - echo "Running integration tests..."
-      - dotnet test introspect2B.sln --configuration Release --filter "TestCategory=Integration" --logger "console;verbosity=detailed" --logger "trx" --results-directory test-results || true
+      - dotnet test src/claim-status-api.Integration.Tests --configuration Release --logger "console;verbosity=detailed" --logger "trx" --results-directory test-results/codebuild || true
 
   post_build:
     commands:
       - echo "Test execution completed"
-      - echo "Merging coverage reports..."
-      - dotnet tool run reportgenerator -reports:"test-results/**/coverage.cobertura.xml" -targetdir:"test-results/merged-coverage" -reporttypes:"Cobertura"
       - echo "Test results location:"
-      - find test-results -type f -name "*.trx" -o -name "*.xml" 2>/dev/null || echo "No test results found"
+      - find test-results/codebuild -type f -name "*.trx" -o -name "*.xml" 2>/dev/null || echo "No test results found"
 
 artifacts:
   files:
@@ -47,11 +44,11 @@ artifacts:
 reports:
   UnitTestReport:
     files:
-      - 'test-results/**/*.trx'
+      - 'test-results/codebuild/**/*.trx'
     file-format: 'VSTEST'
   CodeCoverageReport:
     files:
-      - 'test-results/merged-coverage/Cobertura.xml'
+      - 'test-results/codebuild/**/coverage.cobertura.xml'
     file-format: 'COBERTURAXML'
 
 cache:
