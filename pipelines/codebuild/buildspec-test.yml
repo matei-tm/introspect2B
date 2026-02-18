@@ -14,6 +14,9 @@ phases:
       - ./dotnet-install.sh --channel 10.0 --quality daily --install-dir /root/.dotnet
       - ln -sf /root/.dotnet/dotnet /usr/local/bin/dotnet
       - dotnet --info | head -n 20
+      - echo "Installing ReportGenerator for coverage merging..."
+      - dotnet tool install --global dotnet-reportgenerator-globaltool || true
+      - export PATH="$PATH:/root/.dotnet/tools"
   pre_build:
     commands:
       - echo "Installing test dependencies..."
@@ -31,6 +34,9 @@ phases:
   post_build:
     commands:
       - echo "Test execution completed"
+      - echo "Merging coverage reports..."
+      - export PATH="$PATH:/root/.dotnet/tools"
+      - reportgenerator -reports:"test-results/**/coverage.cobertura.xml" -targetdir:"test-results/merged-coverage" -reporttypes:"Cobertura" || echo "Coverage merge failed"
       - echo "Test results location:"
       - find test-results -type f -name "*.trx" -o -name "*.xml" 2>/dev/null || echo "No test results found"
 
@@ -46,7 +52,7 @@ reports:
     file-format: 'VSTEST'
   CodeCoverageReport:
     files:
-      - 'test-results/**/coverage.cobertura.xml'
+      - 'test-results/merged-coverage/Cobertura.xml'
     file-format: 'COBERTURAXML'
 
 cache:
